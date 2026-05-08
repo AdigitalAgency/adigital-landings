@@ -1,0 +1,20 @@
+{
+  "name": "adigital-landings",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "npm@11.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.2",
+    "turbo": "latest",
+    "typescript": "^6.0.3"
+  }
+}
