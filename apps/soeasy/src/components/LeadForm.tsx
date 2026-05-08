@@ -6,9 +6,10 @@ interface LeadFormProps {
   variant?: 'hero' | 'default';
   prefilledLanguage?: string;
   prefilledAudience?: string;
+  onSuccess?: () => void;
 }
 
-export function LeadForm({ id = 'lead-form', variant = 'default', prefilledLanguage, prefilledAudience }: LeadFormProps) {
+export function LeadForm({ id = 'lead-form', variant = 'default', prefilledLanguage, prefilledAudience, onSuccess }: LeadFormProps) {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -55,6 +56,7 @@ export function LeadForm({ id = 'lead-form', variant = 'default', prefilledLangu
 
       // If we got here, Supabase save worked (or we would be in the catch block)
       setStatus('success');
+      if (onSuccess) onSuccess();
       
       // Track conversion events
       if (typeof window !== 'undefined') {

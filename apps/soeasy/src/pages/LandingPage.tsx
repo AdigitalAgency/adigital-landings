@@ -1,0 +1,526 @@
+import { useEffect, useRef, useState } from 'react';
+import { LeadForm } from '../components/LeadForm';
+import { LanguageAccordion } from '../components/LanguageAccordion';
+import { StickyCTA } from '../components/StickyCTA';
+import { ImageWithFallback } from '../components/figma/ImageWithFallback';
+import { Header } from '../components/Header';
+import { BookingCalendar } from '@adigital/shared';
+import { CheckCircle2 } from 'lucide-react';
+
+import { useNavigate } from 'react-router-dom';
+
+export default function LandingPage() {
+  const navigate = useNavigate();
+  const formRef = useRef<HTMLDivElement>(null);
+  const bookingRef = useRef<HTMLDivElement>(null);
+  const [prefilled, setPrefilled] = useState({ language: '', audience: '' });
+  const [formStep, setFormStep] = useState<'form' | 'booking'>('form');
+
+  useEffect(() => {
+    // Scroll tracking
+    let scrolled50 = false;
+    const handleScroll = () => {
+      const scrollPercent = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+      if (scrollPercent >= 50 && !scrolled50) {
+        scrolled50 = true;
+        if ((window as any).gtag) {
+          (window as any).gtag('event', 'scroll', { percent: 50 });
+        }
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToForm = (language?: string, audience?: string) => {
+    if (language || audience) {
+      setPrefilled({ 
+        language: language || '', 
+        audience: audience || '' 
+      });
+    }
+    if (formRef.current) {
+      formRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
+  const adultLanguages = [
+    { name: 'Εξειδικευμένα Πτυχία για ενήλικες', flag: '🎓' },
+    { name: 'Αγγλικά', flag: '🇬🇧' },
+    { name: 'Γαλλικά', flag: '🇫🇷' },
+    { name: 'Γερμανικά', flag: '🇩🇪' },
+    { name: 'Ισπανικά', flag: '🇪🇸' },
+    { name: 'Ιταλικά', flag: '🇮🇹' },
+    { name: 'Κινέζικα', flag: '🇨🇳' },
+    { name: 'Ρωσικά', flag: '🇷🇺' },
+    { name: 'Αραβικά', flag: '🇸🇦' },
+    { name: 'Τουρκικά', flag: '🇹🇷' },
+  ];
+
+
+  const childLanguages = [
+    { name: 'Αγγλικά', flag: '🇬🇧' },
+    { name: 'Γαλλικά', flag: '🇫🇷' },
+    { name: 'Γερμανικά', flag: '🇩🇪' },
+    { name: 'Ισπανικά', flag: '🇪🇸' },
+    { name: 'Ιταλικά', flag: '🇮🇹' },
+    { name: 'Κινέζικα', flag: '🇨🇳' },
+    { name: 'Ρωσικά', flag: '🇷🇺' },
+    { name: 'Αραβικά', flag: '🇸🇦' },
+    { name: 'Τουρκικά', flag: '🇹🇷' },
+  ];
+
+
+  return (
+    <div className="min-h-screen" style={{ fontFamily: 'Manrope, sans-serif' }}>
+      <Header onCTAClick={() => scrollToForm()} />
+      <StickyCTA />
+
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateX(-20px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        h1, h2, h3 {
+          font-family: 'Manrope', sans-serif;
+        }
+      `}</style>
+
+      {/* SECTION 1 - HERO */}
+      <section
+        className="relative py-20 md:py-32 overflow-hidden"
+        style={{
+          background: 'linear-gradient(135deg, #FAF7F3 0%, #E8E0D5 100%)',
+        }}
+      >
+        <div
+          className="absolute inset-0 opacity-5"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23C8694F' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }}
+        />
+
+        <div className="max-w-[1200px] mx-auto px-6 relative z-10">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div style={{ animation: 'fadeIn 0.8s ease-out' }}>
+              <h1
+                className="mb-6"
+                style={{
+                  fontSize: 'clamp(2rem, 5vw, 3.5rem)',
+                  lineHeight: '1.2',
+                  fontWeight: 700,
+                  color: '#2B2520',
+                }}
+              >
+                Μαθήματα Ξένων Γλωσσών στο Περιστέρι για Παιδιά & Ενήλικες
+              </h1>
+
+              <p
+                className="text-lg md:text-xl mb-8 opacity-80"
+                style={{ animation: 'fadeIn 0.8s ease-out 0.2s backwards' }}
+              >
+                Αγγλικά, Ισπανικά, Γερμανικά, Ιταλικά με έμπειρους καθηγητές και αποδεδειγμένα αποτελέσματα
+              </p>
+
+              <button
+                onClick={() => scrollToForm()}
+                className="px-8 py-4 bg-primary text-primary-foreground rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                style={{ animation: 'fadeIn 0.8s ease-out 0.4s backwards' }}
+              >
+                Κλείσε Δωρεάν Ραντεβού
+              </button>
+            </div>
+
+            <div style={{ animation: 'fadeIn 0.8s ease-out 0.3s backwards' }}>
+              <LeadForm 
+                id="hero-form" 
+                variant="hero" 
+                onSuccess={() => {
+                  setFormStep('booking');
+                  setTimeout(() => bookingRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div
+          className="absolute -bottom-1 left-0 right-0 h-32 bg-background"
+          style={{
+            clipPath: 'polygon(0 50%, 100% 0, 100% 100%, 0 100%)',
+          }}
+        />
+      </section>
+
+      {/* SECTION 2 - SEGMENTATION */}
+      <section className="py-20 bg-background">
+        <div className="max-w-[1200px] mx-auto px-6">
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Block 1 - Kids */}
+            <div
+              className="bg-white p-8 rounded-2xl shadow-lg border border-border hover:shadow-xl transition-all duration-300"
+              style={{
+                animation: 'scaleIn 0.6s ease-out',
+                background: 'linear-gradient(135deg, #ffffff 0%, #FAF7F3 100%)',
+              }}
+            >
+              <div className="mb-4 text-4xl">📚</div>
+              <h2 className="mb-4 text-3xl" style={{ color: '#2B2520' }}>
+                Μαθήματα για Παιδιά
+              </h2>
+              <ul className="space-y-3 mb-6 text-foreground/80">
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <span>Αγγλικά από μικρή ηλικία</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <span>Προετοιμασία για πιστοποιήσεις</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <span>Διαδραστική εκμάθηση</span>
+                </li>
+              </ul>
+              <button
+                onClick={() => scrollToForm(undefined, 'child')}
+                className="px-6 py-3 bg-secondary text-secondary-foreground rounded-lg hover:opacity-90 transition-all duration-300 shadow-md hover:shadow-lg"
+              >
+                Ενδιαφέρομαι για παιδί
+              </button>
+            </div>
+
+            {/* Block 2 - Adults */}
+            <div
+              className="bg-white p-8 rounded-2xl shadow-lg border border-border hover:shadow-xl transition-all duration-300"
+              style={{
+                animation: 'scaleIn 0.6s ease-out 0.2s backwards',
+                background: 'linear-gradient(135deg, #ffffff 0%, #E8E0D5 100%)',
+              }}
+            >
+              <div className="mb-4 text-4xl">🎓</div>
+              <h2 className="mb-4 text-3xl" style={{ color: 'var(--navy)' }}>
+                Μαθήματα για Ενήλικες
+              </h2>
+              <ul className="space-y-3 mb-6 text-foreground/80">
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <span>Ισπανικά, Γερμανικά, Ιταλικά</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <span>Για επαγγελματικούς λόγους</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <span>Ευέλικτα προγράμματα</span>
+                </li>
+              </ul>
+              <button
+                onClick={() => scrollToForm(undefined, 'adult')}
+                className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-all duration-300 shadow-md hover:shadow-lg"
+              >
+                Ενδιαφέρομαι ως ενήλικας
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 3 - VALUE PROPOSITION */}
+      <section
+        id="why-us"
+        className="py-20 relative overflow-hidden"
+        style={{
+          background: 'linear-gradient(135deg, #feea00 0%, #fef34d 100%)',
+        }}
+      >
+        <div className="max-w-[1200px] mx-auto px-6 relative z-10">
+          <h2 className="text-center mb-12  text-4xl md:text-5xl">
+            Γιατί να επιλέξετε SoEasy Περιστερίου
+          </h2>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { icon: '👥', text: 'Ολιγομελή τμήματα (4–8 άτομα)' },
+              { icon: '⭐', text: 'Έμπειροι καθηγητές' },
+              { icon: '🏢', text: 'Σύγχρονες εγκαταστάσεις' },
+              { icon: '📈', text: 'Υψηλά ποσοστά επιτυχίας' },
+            ].map((item, idx) => (
+              <div
+                key={idx}
+                className="bg-white/10 backdrop-blur-sm p-6 rounded-xl border border-white/20 text-center hover:bg-white/20 transition-all duration-300"
+                style={{ animation: `scaleIn 0.6s ease-out ${idx * 0.1}s backwards` }}
+              >
+                <div className="text-5xl mb-4">{item.icon}</div>
+                <p className=" text-lg">{item.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 4 - SOCIAL PROOF */}
+      <section id="testimonials" className="py-20 bg-background">
+        <div className="max-w-[1200px] mx-auto px-6">
+          <h2 className="text-center mb-12 text-4xl md:text-5xl" style={{ color: 'var(--navy)' }}>
+            Τι λένε οι μαθητές και οι γονείς
+          </h2>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                name: 'Μαρία Π.',
+                text: 'Η κόρη μου πήρε το Lower με άριστα! Οι καθηγητές είναι εξαιρετικοί και το περιβάλλον πολύ φιλικό.',
+                achievement: 'Lower - Άριστα',
+              },
+              {
+                name: 'Γιώργος Κ.',
+                text: 'Τέλεια προετοιμασία για τα γερμανικά! Εξαιρετικό επίπεδο διδασκαλίας και πολύ καλή οργάνωση.',
+                achievement: 'Goethe B2',
+              },
+              {
+                name: 'Ελένη Δ.',
+                text: 'Ευέλικτα προγράμματα που ταιριάζουν στο πρόγραμμά μου. Έμαθα ισπανικά σε χρόνο ρεκόρ!',
+                achievement: 'DELE B1',
+              },
+            ].map((testimonial, idx) => (
+              <div
+                key={idx}
+                className="bg-white p-6 rounded-xl shadow-lg border border-border"
+                style={{ animation: `fadeIn 0.6s ease-out ${idx * 0.15}s backwards` }}
+              >
+                <div className="mb-4 text-accent text-3xl">"</div>
+                <p className="mb-4 opacity-80 italic">{testimonial.text}</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">{testimonial.name}</p>
+                    <p className="text-sm text-primary">{testimonial.achievement}</p>
+                  </div>
+                  <div className="text-2xl">⭐⭐⭐⭐⭐</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 5 - LANGUAGES */}
+      <section id="languages" className="py-20 bg-muted/30">
+        <div className="max-w-[1200px] mx-auto px-6">
+          <h2 className="text-center mb-12 text-4xl md:text-5xl" style={{ color: 'var(--navy)' }}>
+            Οι Γλώσσες που Προσφέρουμε
+          </h2>
+
+          <div className="grid lg:grid-cols-2 gap-8">
+            <div>
+              <h3 className="mb-4 text-2xl" style={{ color: 'var(--navy)' }}>
+                Γλώσσες για Ενήλικες
+              </h3>
+              <LanguageAccordion
+                audience="adult"
+                languages={adultLanguages}
+                onCTAClick={(language, audience) => scrollToForm(language, audience)}
+              />
+            </div>
+
+            <div>
+              <h3 className="mb-4 text-2xl" style={{ color: 'var(--navy)' }}>
+                Γλώσσες για Παιδιά
+              </h3>
+              <LanguageAccordion
+                audience="child"
+                languages={childLanguages}
+                onCTAClick={(language, audience) => scrollToForm(language, audience)}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 6 - EXPERIENCE */}
+      <section className="py-20 bg-background">
+        <div className="max-w-[1200px] mx-auto px-6">
+          <h2 className="text-center mb-12 text-4xl md:text-5xl" style={{ color: 'var(--navy)' }}>
+            Η εμπειρία στο SoEasy
+          </h2>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              {
+                url: 'https://images.unsplash.com/photo-1758270704524-596810e891b5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjbGFzc3Jvb20lMjBzdHVkZW50cyUyMGxlYXJuaW5nfGVufDF8fHx8MTc3NjE2MTQ5Nnww&ixlib=rb-4.1.0&q=80&w=1080',
+                alt: 'Μαθητές στην τάξη',
+              },
+              {
+                url: 'https://images.unsplash.com/photo-1746862932830-f9f695774594?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBlZHVjYXRpb24lMjBzcGFjZSUyMGludGVyaW9yfGVufDF8fHx8MTc3NjE2MTQ5Nnww&ixlib=rb-4.1.0&q=80&w=1080',
+                alt: 'Σύγχρονες αίθουσες',
+              },
+              {
+                url: 'https://images.unsplash.com/photo-1758270704021-361c165d68fd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwyfHxjbGFzc3Jvb20lMjBzdHVkZW50cyUyMGxlYXJuaW5nfGVufDF8fHx8MTc3NjE2MTQ5Nnww&ixlib=rb-4.1.0&q=80&w=1080',
+                alt: 'Διαδραστική μάθηση',
+              },
+            ].map((image, idx) => (
+              <div
+                key={idx}
+                className="relative overflow-hidden rounded-xl shadow-lg group aspect-[4/3]"
+                style={{ animation: `scaleIn 0.6s ease-out ${idx * 0.1}s backwards` }}
+              >
+                <ImageWithFallback
+                  src={image.url}
+                  alt={image.alt}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 7 - PROCESS */}
+      <section
+        id="process"
+        className="py-20 relative overflow-hidden"
+        style={{
+          background: 'linear-gradient(135deg, #FAF7F3 0%, #D4A574 100%)',
+        }}
+      >
+        <div className="max-w-[1200px] mx-auto px-6 relative z-10">
+          <h2 className="text-center mb-16 text-4xl md:text-5xl" style={{ color: 'var(--navy)' }}>
+            Πώς ξεκινάς
+          </h2>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-8">
+            {[
+              { step: '1', text: 'Συμπληρώνεις τη φόρμα' },
+              { step: '2', text: 'Σε καλούμε εντός 24 ωρών' },
+              { step: '3', text: 'Κλείνουμε ραντεβού' },
+              { step: '4', text: 'Ξεκινάς μαθήματα' },
+              { step: '5', text: 'Παραλαμβάνεις το Πτυχίο σου' },
+            ].map((item, idx) => (
+              <div
+                key={idx}
+                className="text-center"
+                style={{ animation: `fadeIn 0.6s ease-out ${idx * 0.15}s backwards` }}
+              >
+                <div
+                  className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-lg"
+                  style={{
+                    background: '#ff8d01',
+                  }}
+                >
+                  {item.step}
+                </div>
+                <p className="text-sm font-medium opacity-90">{item.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 8 - FORM */}
+      <section className="py-20 bg-background" ref={formRef}>
+        <div className="max-w-[600px] mx-auto px-6">
+          <h2 className="text-center mb-4 text-4xl md:text-5xl" style={{ color: 'var(--navy)' }}>
+            Κλείσε Δωρεάν Ραντεβού Αξιολόγησης
+          </h2>
+
+          <p className="text-center mb-8 opacity-70">
+            Θα επικοινωνήσουμε μαζί σας για να:
+          </p>
+
+          <ul className="mb-8 space-y-4 max-w-md mx-auto text-center">
+            <li className="flex flex-col items-center gap-1">
+              <span className="text-primary font-bold">1. Αξιολόγηση επιπέδου</span>
+              <span className="text-sm opacity-70">Βρίσκουμε το ιδανικό σημείο εκκίνησης</span>
+            </li>
+            <li className="flex flex-col items-center gap-1">
+              <span className="text-primary font-bold">2. Πρόταση προγράμματος</span>
+              <span className="text-sm opacity-70">Σχεδιάζουμε τη δική σας εκπαιδευτική πορεία</span>
+            </li>
+            <li className="flex flex-col items-center gap-1">
+              <span className="text-primary font-bold">3. Επίλυση αποριών</span>
+              <span className="text-sm opacity-70">Απαντάμε σε κάθε σας ερώτηση</span>
+            </li>
+          </ul>
+
+          <LeadForm 
+            id="lead-form" 
+            prefilledLanguage={prefilled.language} 
+            prefilledAudience={prefilled.audience} 
+            onSuccess={() => {
+              setFormStep('booking');
+              setTimeout(() => bookingRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+            }}
+          />
+        </div>
+      </section>
+
+      {/* SECTION 8.5 - BOOKING */}
+      <section 
+        className={`py-20 bg-muted/30 transition-all duration-700 ${formStep === 'booking' ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`} 
+        ref={bookingRef}
+      >
+        <div className="max-w-[1200px] mx-auto px-6">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <div className="inline-block px-4 py-1 bg-primary/10 text-primary rounded-full text-sm font-bold mb-4">
+                ΒΗΜΑ 2: ΕΠΙΛΟΓΗ ΡΑΝΤΕΒΟΥ
+              </div>
+              <h2 className="mb-6 text-4xl md:text-5xl" style={{ color: 'var(--navy)' }}>
+                Κλείστε ένα Δωρεάν Δοκιμαστικό
+              </h2>
+              <p className="text-lg opacity-80 mb-8">
+                Επιλέξτε την ημέρα και την ώρα που σας εξυπηρετεί για να γνωρίσετε από κοντά τη μέθοδο SoEasy.
+              </p>
+            </div>
+            <div>
+              <BookingCalendar 
+                accentColor="#ff8d01"
+                onSchedule={(date, time) => {
+                  console.log('Scheduled:', date, time);
+                  // Simulate save and redirect
+                  setTimeout(() => navigate('/thank-you'), 1500);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 9 - FINAL CTA */}
+      <section
+        className="py-24 relative overflow-hidden"
+        style={{
+          background: 'linear-gradient(90deg, #feea00 0%, #ff8d01 100%)',
+        }}
+      >
+        <div className="max-w-[1200px] mx-auto px-6 text-center relative z-10">
+          <h2 className="mb-8 text-navy text-4xl md:text-5xl font-bold">Έτοιμος να ξεκινήσεις;</h2>
+          <button
+            onClick={() => scrollToForm()}
+            className="px-10 py-5 bg-[#2B2520] text-white rounded-lg shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105 text-xl font-medium"
+          >
+            Κλείσε τώρα το ραντεβού σου
+          </button>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-8 bg-foreground text-background text-center">
+        <p className="opacity-70 mb-2">© 2026 SoEasy Περιστερίου - Μαθήματα Ξένων Γλωσσών</p>
+        <p className="text-xs opacity-50">
+          Designed & Developed by <a href="https://adigitalagency.gr" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">ADIGITAL Marketing Agency</a>
+        </p>
+      </footer>
+    </div>
+  );
+}
