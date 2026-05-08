@@ -71,8 +71,9 @@ export function LeadForm({ id = 'lead-form', variant = 'default', prefilledLangu
       }
       setFormData({ name: '', phone: '', audience: '', language: '' });
       setTimeout(() => setStatus('idle'), 5000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Form error:', error);
+      alert('Error details: ' + (error?.message || JSON.stringify(error)));
       setStatus('error');
       setTimeout(() => setStatus('idle'), 5000);
     }
