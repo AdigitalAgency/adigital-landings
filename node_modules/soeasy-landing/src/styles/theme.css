@@ -1,0 +1,23 @@
+:root {
+  /* SoEasy Color Palette */
+  --primary: #ff8d01; /* Orange */
+  --primary-foreground: #ffffff;
+  --secondary: #feea00; /* Yellow */
+  --secondary-foreground: #2b2520;
+  --accent: #ff8d01;
+  --navy: #2b2520; /* Dark brown/navy from logo */
+  
+  --background: #ffffff;
+  --foreground: #2b2520;
+  --muted: #f4f4f4;
+  --muted-foreground: #666666;
+  --border: #e5e5e5;
+  
+  --radius: 0.75rem;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: 'Manrope', sans-serif;
+}
