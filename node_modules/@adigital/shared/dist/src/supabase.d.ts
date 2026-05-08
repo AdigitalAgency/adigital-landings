@@ -1,2 +1,0 @@
-export declare const createSupabaseClient: (url: string, key: string) => import("@supabase/supabase-js").SupabaseClient<any, "public", "public", any, any>;
-export declare const submitLead: (supabase: any, table: string, leadData: any) => Promise<any>;
