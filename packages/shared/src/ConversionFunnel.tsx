@@ -270,43 +270,19 @@ export const ConversionFunnel: React.FC<ConversionFunnelProps> = ({
                 <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  value={formData.name}
-                  onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
-                  placeholder="π.χ. Μαρία Παπαδοπούλου"
-                  className={cn(
-                    "w-full pl-9 pr-4 py-3 rounded-xl border text-sm outline-none transition-all",
-                    errors.name ? "border-red-400 bg-red-50" : "border-gray-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20"
-                  )}
-                  style={!errors.name ? { '--tw-ring-color': `${accent}33` } as any : {}}
+                  placeholder="Το όνομά σας"
+                  value={lead.name}
+                  onChange={(e) => setLead({ ...lead, name: e.target.value })}
+                  className="w-full px-5 py-4 rounded-xl border border-[#E8E0D5] bg-white text-[#2B2520] placeholder:text-[#A8A29E] focus:outline-none focus:ring-2 focus:ring-opacity-20 transition-all"
+                  style={{ '--tw-ring-color': accent } as any}
                 />
               </div>
-              {errors.name && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle size={12} />{errors.name}</p>}
-            </div>
 
-            {/* Phone */}
-            <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-                Τηλέφωνο *
-              </label>
-              <div className="relative">
-                <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-[#4A443F] ml-1">Τηλέφωνο</label>
                 <input
+                  required
                   type="tel"
-                  value={formData.phone}
-                  onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))}
-                  placeholder="π.χ. 6912345678"
-                  className={cn(
-                    "w-full pl-9 pr-4 py-3 rounded-xl border text-sm outline-none transition-all",
-                    errors.phone ? "border-red-400 bg-red-50" : "border-gray-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20"
-                  )}
-                />
-              </div>
-              {errors.phone && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle size={12} />{errors.phone}</p>}
-            </div>
-
-            {/* Custom Fields */}
-            {settings.custom_fields.map(field => (
-              <div key={field.id}>
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
                   {field.label} {field.required && '*'}
                 </label>
