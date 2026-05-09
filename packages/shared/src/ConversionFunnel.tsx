@@ -1,10 +1,10 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   format, addMonths, subMonths, startOfMonth, endOfMonth,
   startOfWeek, endOfWeek, isSameMonth, isSameDay,
   eachDayOfInterval, isBefore, startOfDay,
 } from 'date-fns';
-import { el } from 'date-fns/locale';
+import { el } from 'el-GR'; // Use Greek locale
 import {
   ChevronLeft, ChevronRight, Clock, CheckCircle2,
   Loader2, AlertCircle
@@ -19,6 +19,7 @@ export interface CustomField {
   options?: string[];
   required: boolean;
   placeholder?: string;
+  defaultValue?: string; // Support for prefilling
 }
 
 export interface WorkingDay {
@@ -118,9 +119,28 @@ export const ConversionFunnel: React.FC<ConversionFunnelProps> = ({
   const settings: BookingSettings = { ...DEFAULT_SETTINGS, ...settingsOverride };
   const accent = accentColor || settings.accent_color;
 
+  // State
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const [leadId, setLeadId] = useState<string | null>(null);
-  const [formData, setFormData] = useState<FunnelLead>({ name: '', phone: '' });
+  
+  // Initialize form with default values from settings (prefilling)
+  const [formData, setFormData] = useState<FunnelLead>(() => {
+    const initial: FunnelLead = { name: '', phone: '' };
+    settings.custom_fields.forEach(f => {
+      if (f.defaultValue) initial[f.id] = f.defaultValue;
+    });
+    return initial;
+  });
+
+  // Sync state if settings change (for prefilling from external buttons)
+  useEffect(() => {
+    settings.custom_fields.forEach(f => {
+      if (f.defaultValue) {
+        setFormData(prev => ({ ...prev, [f.id]: f.defaultValue || prev[f.id] }));
+      }
+    });
+  }, [settings.custom_fields]);
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -175,50 +195,55 @@ export const ConversionFunnel: React.FC<ConversionFunnelProps> = ({
   const timeSlots = selectedDate ? generateTimeSlots(selectedDate, settings) : [];
 
   return (
-    <div className="w-full max-w-xl mx-auto font-sans">
-      <div className="bg-white rounded-[24px] shadow-[0_10px_50px_rgba(0,0,0,0.1)] border border-[#F3F0EC] overflow-hidden">
+    <div className="w-full max-w-xl mx-auto font-sans" style={{ perspective: '1000px' }}>
+      <div className="bg-white rounded-[32px] shadow-[0_30px_100px_rgba(0,0,0,0.12)] border border-white/50 overflow-hidden">
         
-        <div className="p-8 md:p-10">
+        <div className="p-8 md:p-12">
           
           {/* STEP 1: CLEAN FORM (Image 1) */}
           {step === 0 && (
-            <form onSubmit={handleFormSubmit} className="space-y-6">
+            <form onSubmit={handleFormSubmit} className="space-y-8">
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-[#4A443F] ml-1">Όνομα</label>
+                <label className="text-[13px] font-bold text-[#6B6560] ml-1">Όνομα</label>
                 <input
                   required type="text" placeholder="Το όνομά σας"
                   value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
-                  className={`w-full px-5 py-4 rounded-xl border transition-all outline-none ${errors.name ? 'border-red-500' : 'border-[#E8E0D5] focus:border-[#ff8d01]'}`}
+                  className={`w-full px-6 py-4.5 rounded-2xl border transition-all outline-none text-lg ${errors.name ? 'border-red-500' : 'border-[#F0EBE5] bg-[#FCFAF8] focus:bg-white focus:border-[#ff8d01] focus:shadow-[0_0_0_4px_rgba(255,141,1,0.1)]'}`}
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-[#4A443F] ml-1">Τηλέφωνο</label>
+                <label className="text-[13px] font-bold text-[#6B6560] ml-1">Τηλέφωνο</label>
                 <input
                   required type="tel" placeholder="Το τηλέφωνό σας"
                   value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})}
-                  className={`w-full px-5 py-4 rounded-xl border transition-all outline-none ${errors.phone ? 'border-red-500' : 'border-[#E8E0D5] focus:border-[#ff8d01]'}`}
+                  className={`w-full px-6 py-4.5 rounded-2xl border transition-all outline-none text-lg ${errors.phone ? 'border-red-500' : 'border-[#F0EBE5] bg-[#FCFAF8] focus:bg-white focus:border-[#ff8d01] focus:shadow-[0_0_0_4px_rgba(255,141,1,0.1)]'}`}
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-6">
                 {settings.custom_fields.map(field => (
                   <div key={field.id} className="space-y-2">
-                    <label className="text-sm font-semibold text-[#4A443F] ml-1">{field.label}</label>
+                    <label className="text-[13px] font-bold text-[#6B6560] ml-1">{field.label}</label>
                     {field.type === 'select' ? (
-                      <select
-                        required={field.required} value={formData[field.id] || ''}
-                        onChange={e => setFormData({...formData, [field.id]: e.target.value})}
-                        className="w-full px-5 py-4 rounded-xl border border-[#E8E0D5] bg-white text-[#2B2520] appearance-none focus:border-[#ff8d01] outline-none"
-                      >
-                        <option value="">Επιλέξτε...</option>
-                        {field.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                      </select>
+                      <div className="relative">
+                        <select
+                          required={field.required} value={formData[field.id] || ''}
+                          onChange={e => setFormData({...formData, [field.id]: e.target.value})}
+                          className="w-full px-6 py-4.5 rounded-2xl border border-[#F0EBE5] bg-[#FCFAF8] text-[#2B2520] appearance-none focus:bg-white focus:border-[#ff8d01] outline-none transition-all pr-10"
+                        >
+                          <option value="">Επιλέξτε...</option>
+                          {field.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        </select>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#A8A29E]">
+                          <ChevronRight size={18} className="rotate-90" />
+                        </div>
+                      </div>
                     ) : (
                       <input
                         required={field.required} type={field.type}
                         value={formData[field.id] || ''} onChange={e => setFormData({...formData, [field.id]: e.target.value})}
-                        className="w-full px-5 py-4 rounded-xl border border-[#E8E0D5] focus:border-[#ff8d01] outline-none"
+                        className="w-full px-6 py-4.5 rounded-2xl border border-[#F0EBE5] bg-[#FCFAF8] focus:bg-white focus:border-[#ff8d01] outline-none transition-all"
                       />
                     )}
                   </div>
@@ -227,7 +252,7 @@ export const ConversionFunnel: React.FC<ConversionFunnelProps> = ({
 
               <button
                 type="submit" disabled={isSubmitting}
-                className="w-full py-4 px-6 rounded-xl text-white font-bold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
+                className="w-full py-5 px-8 rounded-2xl text-white font-black text-xl shadow-[0_15px_40px_rgba(255,141,1,0.3)] hover:shadow-[0_20px_50px_rgba(255,141,1,0.4)] transform hover:-translate-y-1 active:translate-y-0 transition-all flex items-center justify-center gap-3 mt-4"
                 style={{ backgroundColor: accent }}
               >
                 {isSubmitting ? <Loader2 className="animate-spin" /> : 'Αποστολή'}
@@ -237,29 +262,37 @@ export const ConversionFunnel: React.FC<ConversionFunnelProps> = ({
 
           {/* STEP 2: GRID CALENDAR (Image 4) */}
           {step === 1 && (
-            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="space-y-8">
               <div className="text-center">
-                <h3 className="text-2xl font-bold text-[#2B2520] mb-1">Επιλέξτε Ημερομηνία & Ώρα</h3>
-                <p className="text-sm text-[#A8A29E]">Διάρκεια: {settings.slot_duration_minutes} λεπτά</p>
+                <h3 className="text-3xl font-black text-[#2B2520] mb-2">Επιλέξτε Ημερομηνία & Ώρα</h3>
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#F3F0EC] rounded-full text-xs font-bold text-[#6B6560]">
+                  <Clock size={12} /> {settings.slot_duration_minutes} λεπτά
+                </div>
               </div>
 
-              <div className="flex items-center justify-between px-2 mb-4">
-                <h4 className="text-lg font-bold text-[#2B2520] capitalize">
+              <div className="flex items-center justify-between px-2">
+                <h4 className="text-xl font-black text-[#2B2520] capitalize">
                   {format(currentMonth, 'MMMM yyyy', { locale: el })}
                 </h4>
-                <div className="flex gap-1">
-                  <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-2 hover:bg-[#F3F0EC] rounded-full transition-colors">
-                    <ChevronLeft size={20} className="text-[#4A443F]" />
+                <div className="flex gap-2">
+                  <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-3 hover:bg-[#F3F0EC] rounded-full transition-all">
+                    <ChevronLeft size={24} />
                   </button>
-                  <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-2 hover:bg-[#F3F0EC] rounded-full transition-colors">
-                    <ChevronRight size={20} className="text-[#4A443F]" />
+                  <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-3 hover:bg-[#F3F0EC] rounded-full transition-all">
+                    <ChevronRight size={24} />
                   </button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-7 gap-1 text-center mb-2">
+              {/* Force Grid Layout with Inline Styles to bypass any Tailwind issues */}
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(7, 1fr)', 
+                gap: '8px',
+                textAlign: 'center' 
+              }}>
                 {['ΔΕ', 'ΤΡ', 'ΤΕ', 'ΠΕ', 'ΠΑ', 'ΣΑ', 'ΚΥ'].map(d => (
-                  <div key={d} className="text-[10px] font-bold text-[#A8A29E] py-2 uppercase tracking-widest">{d}</div>
+                  <div key={d} className="text-[11px] font-black text-[#A8A29E] py-2 uppercase tracking-widest">{d}</div>
                 ))}
                 {days.map((day, idx) => {
                   const isSelected = selectedDate && isSameDay(day, selectedDate);
@@ -267,31 +300,56 @@ export const ConversionFunnel: React.FC<ConversionFunnelProps> = ({
                   const isCurrentMonth = isSameMonth(day, currentMonth);
                   
                   return (
-                    <button
-                      key={idx} disabled={isPast || !isCurrentMonth}
-                      onClick={() => setSelectedDate(day)}
-                      className={`aspect-square flex items-center justify-center rounded-full text-sm font-medium transition-all
-                        ${!isCurrentMonth ? 'opacity-0 pointer-events-none' : ''}
-                        ${isSelected ? 'bg-[#ff8d01] text-white shadow-lg' : isPast ? 'text-[#D1CDC7] cursor-not-allowed' : 'text-[#2B2520] hover:bg-[#F3F0EC]'}
-                      `}
-                      style={isSelected ? { backgroundColor: accent } : {}}
-                    >
-                      {format(day, 'd')}
-                    </button>
+                    <div key={idx} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                      <button
+                        disabled={isPast || !isCurrentMonth}
+                        onClick={() => setSelectedDate(day)}
+                        style={{
+                          width: '44px',
+                          height: '44px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: '9999px',
+                          fontSize: '16px',
+                          fontWeight: 'bold',
+                          transition: 'all 0.2s',
+                          border: 'none',
+                          cursor: (isPast || !isCurrentMonth) ? 'not-allowed' : 'pointer',
+                          backgroundColor: isSelected ? accent : 'transparent',
+                          color: isSelected ? 'white' : (isPast || !isCurrentMonth) ? '#D1CDC7' : '#2B2520',
+                          opacity: isCurrentMonth ? 1 : 0,
+                          pointerEvents: isCurrentMonth ? 'auto' : 'none',
+                          boxShadow: isSelected ? `0 10px 25px ${accent}40` : 'none',
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isSelected && isCurrentMonth && !isPast) {
+                            e.currentTarget.style.backgroundColor = '#F3F0EC';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isSelected) {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }
+                        }}
+                      >
+                        {format(day, 'd')}
+                      </button>
+                    </div>
                   );
                 })}
               </div>
 
               {selectedDate && (
-                <div className="space-y-4 pt-6 border-t border-[#F3F0EC] animate-in fade-in duration-300">
-                  <p className="text-sm font-bold text-[#4A443F]">
-                    Διαθεσιμότητα για {format(selectedDate, 'EEEE d MMMM', { locale: el })}
+                <div className="space-y-6 pt-10 border-t border-[#F3F0EC]">
+                  <p className="text-center font-bold text-[#4A443F]">
+                    Διαθεσιμότητα για <span className="text-[#ff8d01]">{format(selectedDate, 'EEEE d MMMM', { locale: el })}</span>
                   </p>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                     {timeSlots.map(time => (
                       <button
                         key={time} onClick={() => handleTimeSelect(time)}
-                        className="py-3 px-2 rounded-xl border border-[#E8E0D5] text-sm font-bold text-[#2B2520] hover:border-[#ff8d01] hover:text-[#ff8d01] hover:bg-[#ff8d01]/5 transition-all"
+                        className="py-4 rounded-2xl border border-[#E8E0D5] text-base font-black text-[#2B2520] hover:border-[#ff8d01] hover:text-[#ff8d01] hover:bg-[#ff8d01]/5 transition-all shadow-sm"
                       >
                         {time}
                       </button>
@@ -300,35 +358,35 @@ export const ConversionFunnel: React.FC<ConversionFunnelProps> = ({
                 </div>
               )}
               
-              <button onClick={() => setStep(0)} className="text-sm text-[#A8A29E] hover:text-[#4A443F] transition-colors flex items-center gap-1 mx-auto">
-                <ChevronLeft size={14} /> Επιστροφή στη φόρμα
+              <button onClick={() => setStep(0)} className="text-sm font-bold text-[#A8A29E] hover:text-[#ff8d01] transition-colors flex items-center gap-1 mx-auto mt-4">
+                <ChevronLeft size={16} /> Επιστροφή στη φόρμα
               </button>
             </div>
           )}
 
           {/* STEP 3: SUCCESS */}
           {step === 2 && (
-            <div className="py-10 text-center animate-in zoom-in duration-500">
-              <div className="w-20 h-20 rounded-full bg-[#22c55e]/10 flex items-center justify-center mx-auto mb-6">
-                <CheckCircle2 size={40} className="text-[#22c55e]" />
+            <div className="py-12 text-center">
+              <div className="w-24 h-24 rounded-full bg-[#22c55e]/10 flex items-center justify-center mx-auto mb-8">
+                <CheckCircle2 size={48} className="text-[#22c55e]" />
               </div>
-              <h3 className="text-2xl font-bold text-[#2B2520] mb-2">{settings.success_message}</h3>
-              <p className="text-[#6B6560] mb-8">
+              <h3 className="text-3xl font-black text-[#2B2520] mb-3">{settings.success_message}</h3>
+              <p className="text-lg text-[#6B6560] leading-relaxed mb-10">
                 Το ραντεβού σας έχει καταχωρηθεί για τις<br />
-                <strong className="text-[#2B2520]">
+                <strong className="text-[#2B2520] text-xl">
                   {selectedDate && format(selectedDate, 'EEEE d MMMM', { locale: el })} στις {selectedTime}
                 </strong>
               </p>
-              <button onClick={() => window.location.reload()} className="px-8 py-3 bg-[#2B2520] text-white rounded-xl font-bold hover:bg-black transition-all">
+              <button onClick={() => window.location.reload()} className="px-10 py-4 bg-[#2B2520] text-white rounded-2xl font-black hover:bg-black transition-all shadow-xl">
                 Κλείσιμο
               </button>
             </div>
           )}
 
-          <div className="mt-8 pt-6 border-t border-[#F3F0EC] text-center">
-            <p className="text-[#A8A29E] text-[11px] font-medium flex items-center justify-center gap-1.5 uppercase tracking-wider">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e]" />
-              Τα στοιχεία σας είναι ασφαλή και δεν κοινοποιούνται
+          <div className="mt-12 pt-8 border-t border-[#F3F0EC] text-center">
+            <p className="text-[#A8A29E] text-[12px] font-bold flex items-center justify-center gap-2 uppercase tracking-widest">
+              <span className="w-2 h-2 rounded-full bg-[#22c55e]" />
+              ΤΑ ΣΤΟΙΧΕΙΑ ΣΑΣ ΕΙΝΑΙ ΑΣΦΑΛΗ ΚΑΙ ΔΕΝ ΚΟΙΝΟΠΟΙΟΥΝΤΑΙ
             </p>
           </div>
         </div>
