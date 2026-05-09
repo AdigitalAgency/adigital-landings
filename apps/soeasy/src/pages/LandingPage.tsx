@@ -131,21 +131,32 @@ export default function LandingPage() {
     setTimeout(() => navigate('/thank-you'), 800);
   }
 
-  const adultLanguages = [
-    { name: 'Εξειδικευμένα Πτυχία για ενήλικες', flag: '🎓' },
+  // Common languages (same order for both)
+  const commonLanguages = [
     { name: 'Αγγλικά', flag: '🇬🇧' }, { name: 'Γαλλικά', flag: '🇫🇷' },
     { name: 'Γερμανικά', flag: '🇩🇪' }, { name: 'Ισπανικά', flag: '🇪🇸' },
     { name: 'Ιταλικά', flag: '🇮🇹' }, { name: 'Κινέζικα', flag: '🇨🇳' },
     { name: 'Ρωσικά', flag: '🇷🇺' }, { name: 'Αραβικά', flag: '🇸🇦' },
     { name: 'Τουρκικά', flag: '🇹🇷' },
   ];
-  const childLanguages = adultLanguages.filter(l => l.name !== 'Εξειδικευμένα Πτυχία για ενήλικες');
+  // Εξειδικευμένα last for adults, Μελέτη για παιδιά last for children
+  const adultLanguages = [...commonLanguages, { name: 'Εξειδικευμένα Πτυχία για ενήλικες', flag: '🎓' }];
+  const childLanguages  = [...commonLanguages, { name: 'Μελέτη για παιδιά', flag: '📖' }];
+
+  // Dynamic language options based on selected audience
+  const audienceIsChild = prefilled.audience === 'Παιδί';
+  const dynamicLanguageOptions = [
+    'Αγγλικά', 'Γαλλικά', 'Γερμανικά', 'Ισπανικά', 'Ιταλικά', 'Κινέζικα', 'Ρωσικά', 'Αραβικά', 'Τουρκικά',
+    ...(audienceIsChild ? ['Μελέτη για παιδιά'] : ['Εξειδικευμένα Πτυχία για ενήλικες']),
+  ];
 
   // Build settings with prefilled audience/language pre-selection
   const funnelSettings = {
     ...SOEASY_SETTINGS,
     custom_fields: SOEASY_SETTINGS.custom_fields.map(f => ({
       ...f,
+      // Dynamically update language options based on audience
+      options: f.id === 'language' ? dynamicLanguageOptions : f.options,
       defaultValue: f.id === 'audience' ? prefilled.audience : f.id === 'language' ? prefilled.language : '',
     })),
   };
