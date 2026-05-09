@@ -195,6 +195,11 @@ export default function LandingPage() {
                 settings={funnelSettings}
                 onPartialCapture={handlePartialCapture}
                 onComplete={handleComplete}
+                onFieldChange={(id, val) => {
+                  if (id === 'audience' || id === 'language') {
+                    setPrefilled(prev => ({ ...prev, [id]: val }));
+                  }
+                }}
                 accentColor="#ff8d01"
               />
             </div>
@@ -284,6 +289,11 @@ export default function LandingPage() {
             settings={funnelSettings}
             onPartialCapture={handlePartialCapture}
             onComplete={handleComplete}
+            onFieldChange={(id, val) => {
+              if (id === 'audience' || id === 'language') {
+                setPrefilled(prev => ({ ...prev, [id]: val }));
+              }
+            }}
             accentColor="#ff8d01"
           />
         </div>

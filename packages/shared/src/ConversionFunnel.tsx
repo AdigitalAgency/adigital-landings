@@ -20,9 +20,12 @@ export interface BookingSettings {
 }
 export interface FunnelLead { name: string; phone: string; [key: string]: string; }
 export interface ConversionFunnelProps {
-  tenantId: string; agencyId: string; settings?: Partial<BookingSettings>;
+  tenantId: string;
+  agencyId: string;
+  settings?: Partial<BookingSettings>;
   onPartialCapture?: (lead: FunnelLead) => Promise<string | null>;
   onComplete?: (leadId: string | null, date: Date, time: string) => Promise<void>;
+  onFieldChange?: (id: string, value: string) => void;
   accentColor?: string;
 }
 
@@ -100,7 +103,7 @@ const S = {
 };
 
 export const ConversionFunnel: React.FC<ConversionFunnelProps> = ({
-  tenantId, agencyId, settings: settingsOverride, onPartialCapture, onComplete, accentColor,
+  tenantId, agencyId, settings: settingsOverride, onPartialCapture, onComplete, onFieldChange, accentColor,
 }) => {
   const settings: BookingSettings = { ...DEFAULT_SETTINGS, ...settingsOverride };
   const accent = accentColor || settings.accent_color;
@@ -160,6 +163,11 @@ export const ConversionFunnel: React.FC<ConversionFunnelProps> = ({
   const timeSlots = selectedDate ? generateTimeSlots(selectedDate, settings) : [];
   const inputStyle = (id: string) => ({ ...S.input, ...(focusedField === id ? S.inputFocus : {}) });
 
+  const updateField = (id: string, value: string) => {
+    setFormData(prev => ({ ...prev, [id]: value } as FunnelLead));
+    if (onFieldChange) onFieldChange(id, value);
+  };
+
   return (
     <div style={{ width: '100%', maxWidth: '520px', margin: '0 auto', fontFamily: 'Manrope, sans-serif' }}>
       <div style={S.card}>
@@ -171,7 +179,7 @@ export const ConversionFunnel: React.FC<ConversionFunnelProps> = ({
               <label style={S.label}>Όνομα</label>
               <input
                 required type="text" placeholder="Το όνομά σας"
-                value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
+                value={formData.name} onChange={e => updateField('name', e.target.value)}
                 onFocus={() => setFocusedField('name')} onBlur={() => setFocusedField(null)}
                 style={inputStyle('name')}
               />
@@ -181,7 +189,7 @@ export const ConversionFunnel: React.FC<ConversionFunnelProps> = ({
               <label style={S.label}>Τηλέφωνο</label>
               <input
                 required type="tel" placeholder="Το τηλέφωνό σας"
-                value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})}
+                value={formData.phone} onChange={e => updateField('phone', e.target.value)}
                 onFocus={() => setFocusedField('phone')} onBlur={() => setFocusedField(null)}
                 style={inputStyle('phone')}
               />
@@ -195,7 +203,7 @@ export const ConversionFunnel: React.FC<ConversionFunnelProps> = ({
                     <div style={S.selectWrap}>
                       <select
                         required={field.required} value={formData[field.id] || ''}
-                        onChange={e => setFormData({...formData, [field.id]: e.target.value})}
+                        onChange={e => updateField(field.id, e.target.value)}
                         onFocus={() => setFocusedField(field.id)} onBlur={() => setFocusedField(null)}
                         style={{ ...inputStyle(field.id), appearance: 'none', paddingRight: '40px', cursor: 'pointer' }}
                       >
@@ -211,7 +219,7 @@ export const ConversionFunnel: React.FC<ConversionFunnelProps> = ({
                   ) : (
                     <input
                       required={field.required} type={field.type}
-                      value={formData[field.id] || ''} onChange={e => setFormData({...formData, [field.id]: e.target.value})}
+                      value={formData[field.id] || ''} onChange={e => updateField(field.id, e.target.value)}
                       onFocus={() => setFocusedField(field.id)} onBlur={() => setFocusedField(null)}
                       style={inputStyle(field.id)}
                     />
