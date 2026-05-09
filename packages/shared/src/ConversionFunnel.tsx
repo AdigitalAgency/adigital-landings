@@ -4,7 +4,7 @@ import {
   startOfWeek, endOfWeek, isSameMonth, isSameDay,
   eachDayOfInterval, isBefore, startOfDay,
 } from 'date-fns';
-import { el } from 'el-GR'; // Use Greek locale
+import { el } from 'date-fns/locale';
 import {
   ChevronLeft, ChevronRight, Clock, CheckCircle2,
   Loader2, AlertCircle
