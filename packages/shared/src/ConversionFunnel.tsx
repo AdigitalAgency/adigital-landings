@@ -117,14 +117,14 @@ export const ConversionFunnel: React.FC<ConversionFunnelProps> = ({
 
   // Sync prefilled values from parent settings changes
   useEffect(() => {
-    const updates: Partial<FunnelLead> = {};
+    const updates: Record<string, string> = {};
     settings.custom_fields.forEach(f => {
       if (f.defaultValue !== undefined && f.defaultValue !== '') {
-        updates[f.id] = f.defaultValue;
+        updates[f.id] = f.defaultValue as string;
       }
     });
     if (Object.keys(updates).length > 0) {
-      setFormData(prev => ({ ...prev, ...updates }));
+      setFormData(prev => ({ ...prev, ...updates } as FunnelLead));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settingsOverride]);
