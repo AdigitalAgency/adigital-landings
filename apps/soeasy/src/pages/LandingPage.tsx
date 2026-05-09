@@ -8,8 +8,8 @@ import { supabase } from '../utils/supabaseClient';
 import { useNavigate } from 'react-router-dom';
 
 // SoEasy Tenant Config
-const TENANT_ID  = 'soeasy-tenant-id';  // Will be replaced with real UUID after DB is up
-const AGENCY_ID  = 'adigital-agency-id'; // Will be replaced with real UUID after DB is up
+const TENANT_ID  = 'bfda7c95-4642-4757-ad8a-4be04937dbb9';
+const AGENCY_ID  = 'cb0a7802-baef-4809-aee5-50c3caafbfbc';
 
 const SOEASY_SETTINGS = {
   slot_duration_minutes: 60,
