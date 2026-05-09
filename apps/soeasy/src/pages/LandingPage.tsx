@@ -55,7 +55,16 @@ export default function LandingPage() {
   }, []);
 
   const scrollToForm = (language?: string, audience?: string) => {
-    if (language || audience) setPrefilled({ language: language || '', audience: audience || '' });
+    let mappedAudience = audience;
+    if (audience === 'adult') mappedAudience = 'Ενήλικας';
+    if (audience === 'child') mappedAudience = 'Παιδί';
+
+    if (language || mappedAudience) {
+      setPrefilled({ 
+        language: language || '', 
+        audience: mappedAudience || '' 
+      });
+    }
     formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
