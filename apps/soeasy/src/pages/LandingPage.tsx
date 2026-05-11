@@ -5,6 +5,7 @@ import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { Header } from '../components/Header';
 import { ConversionFunnel } from '@adigital/shared';
 import { supabase } from '../utils/supabaseClient';
+import { notificationService } from '../utils/notificationService';
 import { useNavigate } from 'react-router-dom';
 
 // SoEasy Tenant Config
@@ -165,11 +166,38 @@ export default function LandingPage() {
       (window as any).fbq?.('track', 'Lead');
       
       // GTM Event
-      (window as any).dataLayer?.push({
-        event: 'booking_complete',
-        lead_id: leadId,
         appointment_date: scheduledAt.toISOString()
       });
+
+      // Trigger Notifications
+      const dateStr = scheduledAt.toLocaleDateString('el-GR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const timeStr = scheduledAt.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
+
+      // 1. Notify Admin
+      notificationService.sendEmail(
+        TENANT_ID,
+        'admin@soeasy.gr', // Should get this from settings
+        'Νέο Ραντεβού!',
+        `Έχετε ένα νέο ραντεβού για τις ${dateStr} ${timeStr}.`
+      );
+
+      // 2. Notify Lead (if phone/email provided in previous step)
+      if (formData.email) {
+        notificationService.sendEmail(
+          TENANT_ID,
+          formData.email,
+          'Επιβεβαίωση Ραντεβού - SoEasy',
+          `Το ραντεβού σας επιβεβαιώθηκε για τις ${dateStr} ${timeStr}. Σας περιμένουμε!`
+        );
+      }
+      
+      if (formData.phone) {
+        notificationService.sendSMS(
+          TENANT_ID,
+          formData.phone,
+          `SoEasy: Το ραντεβού σας επιβεβαιώθηκε για τις ${dateStr} ${timeStr}.`
+        );
+      }
 
     } catch (err) {
       console.error('Booking error:', err);
