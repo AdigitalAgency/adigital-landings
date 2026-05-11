@@ -37,7 +37,7 @@ export const BookingCalendar: React.FC<BookingCalendarProps> = ({
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [step, setStep] = useState<'date' | 'time' | 'success'>('date');
+  const [step, setStep] = useState<'date' | 'time' | 'confirm' | 'success'>('date');
 
   const days = eachDayOfInterval({
     start: startOfWeek(startOfMonth(currentMonth), { weekStartsOn: 1 }),
@@ -47,14 +47,22 @@ export const BookingCalendar: React.FC<BookingCalendarProps> = ({
   const handleDateClick = (day: Date) => {
     if (isBefore(day, startOfDay(new Date()))) return;
     setSelectedDate(day);
+    setSelectedTime(null); // reset time on date change
     setStep('time');
   };
 
   const handleTimeSelect = (time: string) => {
     setSelectedTime(time);
-    onSchedule(selectedDate, time);
-    setStep('success');
+    setStep('confirm'); // go to confirm step instead of directly submitting
   };
+
+  const handleConfirm = () => {
+    if (selectedTime) {
+      onSchedule(selectedDate, selectedTime);
+      setStep('success');
+    }
+  };
+
 
   return (
     <div className="w-full max-w-md mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100 transition-all duration-500 hover:shadow-orange-100/50">
@@ -143,7 +151,7 @@ export const BookingCalendar: React.FC<BookingCalendarProps> = ({
             </button>
             
             <h4 className="font-bold text-gray-800 mb-4 flex items-center">
-              <Clock className="w-5 h-5 mr-2 text-orange-500" />
+              <Clock className="w-5 h-5 mr-2" style={{ color: accentColor }} />
               Διαθέσιμες Ώρες για {format(selectedDate, 'd MMMM', { locale: el })}
             </h4>
 
@@ -152,12 +160,63 @@ export const BookingCalendar: React.FC<BookingCalendarProps> = ({
                 <button
                   key={time}
                   onClick={() => handleTimeSelect(time)}
-                  className="py-3 px-4 rounded-xl border border-gray-100 text-sm font-medium hover:border-orange-500 hover:bg-orange-50 hover:text-orange-600 transition-all duration-200 active:scale-95"
+                  className={cn(
+                    "py-3 px-4 rounded-xl border text-sm font-medium transition-all duration-200 active:scale-95",
+                    selectedTime === time
+                      ? "border-orange-500 bg-orange-50 text-orange-600 shadow-sm"
+                      : "border-gray-100 hover:border-orange-500 hover:bg-orange-50 hover:text-orange-600"
+                  )}
+                  style={selectedTime === time ? { borderColor: accentColor, color: accentColor } : {}}
                 >
                   {time}
                 </button>
               ))}
             </div>
+          </div>
+        )}
+
+        {step === 'confirm' && (
+          <div className="animate-in fade-in slide-in-from-right-4 duration-500">
+            <button 
+              onClick={() => setStep('time')}
+              className="flex items-center text-sm text-gray-500 mb-6 hover:text-gray-800 transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              Αλλαγή ώρας
+            </button>
+
+            <div className="bg-orange-50 border border-orange-100 rounded-2xl p-5 mb-6">
+              <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-3">Σύνοψη Ραντεβού</p>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: accentColor + '20' }}>
+                  <CalendarIcon className="w-5 h-5" style={{ color: accentColor }} />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Ημερομηνία</p>
+                  <p className="font-bold text-gray-800">{format(selectedDate, 'EEEE, d MMMM yyyy', { locale: el })}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: accentColor + '20' }}>
+                  <Clock className="w-5 h-5" style={{ color: accentColor }} />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Ώρα</p>
+                  <p className="font-bold text-gray-800">{selectedTime}</p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={handleConfirm}
+              className="w-full py-3.5 rounded-xl text-white font-bold text-base shadow-lg active:scale-95 transition-all"
+              style={{ backgroundColor: accentColor }}
+            >
+              ✓ Επιβεβαίωση Ραντεβού
+            </button>
+            <p className="text-center text-xs text-gray-400 mt-3">
+              Αν θέλετε να αλλάξετε, πατήστε "Αλλαγή ώρας" παραπάνω
+            </p>
           </div>
         )}
 
@@ -183,3 +242,4 @@ export const BookingCalendar: React.FC<BookingCalendarProps> = ({
     </div>
   );
 };
+
