@@ -111,12 +111,15 @@ export const ConversionFunnel: React.FC<ConversionFunnelProps> = ({
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const [leadId, setLeadId] = useState<string | null>(null);
   const [formData, setFormData] = useState<FunnelLead>({ name: '', phone: '' });
+  const [phoneError, setPhoneError] = useState<string | null>(null);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [pendingTime, setPendingTime] = useState<string | null>(null); // chosen but not yet confirmed
+  const [calendarStep, setCalendarStep] = useState<'pick' | 'confirm'>('pick');
 
   // Sync prefilled values from parent settings changes
   useEffect(() => {
@@ -137,8 +140,19 @@ export const ConversionFunnel: React.FC<ConversionFunnelProps> = ({
     end: endOfWeek(endOfMonth(currentMonth), { weekStartsOn: 1 }),
   });
 
+  const validatePhone = (phone: string): boolean => {
+    // Accepts Greek mobile/landline and international formats
+    const cleaned = phone.replace(/\s/g, '');
+    return /^(\+?\d{10,15}|6\d{9}|2\d{9})$/.test(cleaned);
+  };
+
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validatePhone(formData.phone)) {
+      setPhoneError('Παρακαλώ εισάγετε έγκυρο τηλεφωνικό αριθμό (π.χ. 6901234567)');
+      return;
+    }
+    setPhoneError(null);
     setIsSubmitting(true);
     try {
       const id = onPartialCapture ? await onPartialCapture(formData) : null;
@@ -149,15 +163,28 @@ export const ConversionFunnel: React.FC<ConversionFunnelProps> = ({
     } finally { setIsSubmitting(false); }
   };
 
-  const handleTimeSelect = async (time: string) => {
-    if (!selectedDate) return;
-    setSelectedTime(time); setIsSubmitting(true);
+  // Step 1: user picks a time → show confirm panel (don't submit yet)
+  const handleTimeSelect = (time: string) => {
+    setPendingTime(time);
+    setCalendarStep('confirm');
+  };
+
+  // Step 2: user confirms → actually submit
+  const handleConfirmBooking = async () => {
+    if (!selectedDate || !pendingTime) return;
+    setSelectedTime(pendingTime);
+    setIsSubmitting(true);
     try {
-      await onComplete?.(leadId, selectedDate, time);
+      await onComplete?.(leadId, selectedDate, pendingTime);
       setStep(2);
     } catch (err: any) {
       setSubmitError(err?.message || 'Σφάλμα κράτησης.');
     } finally { setIsSubmitting(false); }
+  };
+
+  const handleChangeTime = () => {
+    setPendingTime(null);
+    setCalendarStep('pick');
   };
 
   const timeSlots = selectedDate ? generateTimeSlots(selectedDate, settings) : [];
@@ -188,11 +215,23 @@ export const ConversionFunnel: React.FC<ConversionFunnelProps> = ({
             <div>
               <label style={S.label}>Τηλέφωνο</label>
               <input
-                required type="tel" placeholder="Το τηλέφωνό σας"
-                value={formData.phone} onChange={e => updateField('phone', e.target.value)}
+                required type="tel" placeholder="π.χ. 6901234567"
+                value={formData.phone}
+                onChange={e => {
+                  updateField('phone', e.target.value);
+                  if (phoneError) setPhoneError(null);
+                }}
                 onFocus={() => setFocusedField('phone')} onBlur={() => setFocusedField(null)}
-                style={inputStyle('phone')}
+                style={{
+                  ...inputStyle('phone'),
+                  ...(phoneError ? { borderColor: '#ef4444', boxShadow: '0 0 0 3px rgba(239,68,68,0.12)' } : {})
+                }}
               />
+              {phoneError && (
+                <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', marginLeft: '2px', fontWeight: 600 }}>
+                  {phoneError}
+                </p>
+              )}
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -322,7 +361,7 @@ export const ConversionFunnel: React.FC<ConversionFunnelProps> = ({
             </div>
 
             {/* Time Slots */}
-            {selectedDate && (
+            {selectedDate && calendarStep === 'pick' && (
               <div style={{ borderTop: '1px solid #F0EAE3', paddingTop: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <p style={{ textAlign: 'center', fontSize: '14px', fontWeight: 700, color: '#4A443F', margin: 0 }}>
                   Διαθέσιμες ώρες — <span style={{ color: accent }}>{format(selectedDate, 'EEEE d MMMM', { locale: el })}</span>
@@ -345,6 +384,53 @@ export const ConversionFunnel: React.FC<ConversionFunnelProps> = ({
                     <p style={{ gridColumn: '1/-1', textAlign: 'center', color: '#A8A29E', fontSize: '14px' }}>Δεν υπάρχουν διαθέσιμες ώρες.</p>
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* CONFIRM PANEL - shown after picking a time */}
+            {calendarStep === 'confirm' && pendingTime && selectedDate && (
+              <div style={{ borderTop: '1px solid #F0EAE3', paddingTop: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ background: '#FFF8F0', border: `1.5px solid ${accent}30`, borderRadius: '16px', padding: '20px' }}>
+                  <p style={{ fontSize: '11px', fontWeight: 700, color: accent, textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 14px' }}>Σύνοψη Ραντεβού</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: `${accent}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    </div>
+                    <div>
+                      <p style={{ fontSize: '11px', color: '#A8A29E', margin: '0 0 2px' }}>Ημερομηνία</p>
+                      <p style={{ fontSize: '15px', fontWeight: 700, color: '#1a1a1a', margin: 0, textTransform: 'capitalize' }}>
+                        {format(selectedDate, 'EEEE, d MMMM yyyy', { locale: el })}
+                      </p>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: `${accent}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Clock size={16} color={accent} />
+                    </div>
+                    <div>
+                      <p style={{ fontSize: '11px', color: '#A8A29E', margin: '0 0 2px' }}>Ώρα</p>
+                      <p style={{ fontSize: '15px', fontWeight: 700, color: '#1a1a1a', margin: 0 }}>{pendingTime}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleConfirmBooking}
+                  disabled={isSubmitting}
+                  style={{ ...S.btn, backgroundColor: accent }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
+                >
+                  {isSubmitting ? <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} /> : '✓ Επιβεβαίωση Ραντεβού'}
+                </button>
+
+                <button onClick={handleChangeTime}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#A8A29E', fontSize: '13px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', margin: '0 auto' }}
+                  onMouseEnter={e => (e.currentTarget.style.color = accent)}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#A8A29E')}
+                >
+                  <ChevronLeft size={14} /> Αλλαγή ώρας
+                </button>
               </div>
             )}
 
