@@ -26,6 +26,7 @@ export interface ConversionFunnelProps {
   onPartialCapture?: (lead: FunnelLead) => Promise<string | null>;
   onComplete?: (leadId: string | null, date: Date, time: string) => Promise<void>;
   onFieldChange?: (id: string, value: string) => void;
+  onDateSelect?: (date: Date) => Promise<string[]>; // returns booked slot times for that date
   accentColor?: string;
 }
 
@@ -103,7 +104,7 @@ const S = {
 };
 
 export const ConversionFunnel: React.FC<ConversionFunnelProps> = ({
-  tenantId, agencyId, settings: settingsOverride, onPartialCapture, onComplete, onFieldChange, accentColor,
+  tenantId, agencyId, settings: settingsOverride, onPartialCapture, onComplete, onFieldChange, onDateSelect, accentColor,
 }) => {
   const settings: BookingSettings = { ...DEFAULT_SETTINGS, ...settingsOverride };
   const accent = accentColor || settings.accent_color;
@@ -118,8 +119,9 @@ export const ConversionFunnel: React.FC<ConversionFunnelProps> = ({
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [pendingTime, setPendingTime] = useState<string | null>(null); // chosen but not yet confirmed
+  const [pendingTime, setPendingTime] = useState<string | null>(null);
   const [calendarStep, setCalendarStep] = useState<'pick' | 'confirm'>('pick');
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
 
   // Sync prefilled values from parent settings changes
   useEffect(() => {
@@ -187,7 +189,9 @@ export const ConversionFunnel: React.FC<ConversionFunnelProps> = ({
     setCalendarStep('pick');
   };
 
-  const timeSlots = selectedDate ? generateTimeSlots(selectedDate, settings) : [];
+  const timeSlots = selectedDate
+    ? generateTimeSlots(selectedDate, settings).filter(t => !bookedSlots.includes(t))
+    : [];
   const inputStyle = (id: string) => ({ ...S.input, ...(focusedField === id ? S.inputFocus : {}) });
 
   const updateField = (id: string, value: string) => {
@@ -340,7 +344,16 @@ export const ConversionFunnel: React.FC<ConversionFunnelProps> = ({
                   <div key={idx} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '3px 0' }}>
                     <button
                       disabled={!available}
-                      onClick={() => setSelectedDate(day)}
+                      onClick={async () => {
+                        setSelectedDate(day);
+                        setCalendarStep('pick');
+                        setPendingTime(null);
+                        setBookedSlots([]);
+                        if (onDateSelect) {
+                          const booked = await onDateSelect(day);
+                          setBookedSlots(booked);
+                        }
+                      }}
                       style={{
                         width: '40px', height: '40px', borderRadius: '50%', border: 'none',
                         background: bgColor, color, cursor, fontWeight,

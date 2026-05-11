@@ -40,6 +40,20 @@ export default function LandingPage() {
   const navigate = useNavigate();
   const formRef = useRef<HTMLDivElement>(null);
   const [prefilled, setPrefilled] = useState({ language: '', audience: '' });
+  const [dbSettings, setDbSettings] = useState<any>(null); // loaded from Supabase
+
+  // Load booking settings from Supabase on mount
+  useEffect(() => {
+    async function loadSettings() {
+      const { data } = await supabase
+        .from('booking_settings')
+        .select('*')
+        .eq('tenant_id', TENANT_ID)
+        .maybeSingle();
+      if (data) setDbSettings(data);
+    }
+    loadSettings();
+  }, []);
 
   useEffect(() => {
     let scrolled50 = false;
@@ -95,7 +109,7 @@ export default function LandingPage() {
       return data?.id ?? null;
     } catch (err) {
       console.error('Partial capture error:', err);
-      return null; // Don't block the user flow if save fails
+      return null;
     }
   }
 
@@ -105,22 +119,24 @@ export default function LandingPage() {
     const scheduledAt = new Date(date);
     scheduledAt.setHours(hours, minutes, 0, 0);
 
+    const slotDuration = dbSettings?.slot_duration_minutes ?? SOEASY_SETTINGS.slot_duration_minutes;
+
     try {
-      // Save appointment
-      const { data: appt } = await supabase
+      const { data: appt, error: apptError } = await supabase
         .from('appointments')
         .insert([{
           tenant_id: TENANT_ID,
           agency_id: AGENCY_ID,
           lead_id: leadId,
           scheduled_at: scheduledAt.toISOString(),
-          duration_minutes: SOEASY_SETTINGS.slot_duration_minutes,
+          duration_minutes: slotDuration,
           status: 'pending',
         }])
         .select('id')
         .single();
 
-      // Update lead status
+      if (apptError) console.error('Appointment insert error:', apptError);
+
       if (leadId) {
         await supabase.from('leads').update({
           booking_status: 'booked',
@@ -128,7 +144,6 @@ export default function LandingPage() {
         }).eq('id', leadId);
       }
 
-      // Fire pixel events
       (window as any).gtag?.('event', 'conversion', { send_to: 'AW-CONVERSION_ID/LABEL' });
       (window as any).fbq?.('track', 'Lead');
 
@@ -136,11 +151,30 @@ export default function LandingPage() {
       console.error('Booking error:', err);
     }
 
-    // Always redirect to thank-you regardless of DB success
     setTimeout(() => navigate('/thank-you'), 800);
   }
 
-  // Common languages (same order for both)
+  // Fetch booked time slots for a given date (so calendar shows them as unavailable)
+  async function getBookedSlots(date: Date): Promise<string[]> {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const { data } = await supabase
+      .from('appointments')
+      .select('scheduled_at')
+      .eq('tenant_id', TENANT_ID)
+      .gte('scheduled_at', startOfDay.toISOString())
+      .lte('scheduled_at', endOfDay.toISOString())
+      .neq('status', 'cancelled');
+
+    return (data || []).map(a => {
+      const d = new Date(a.scheduled_at);
+      return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    });
+  }
+
   const commonLanguages = [
     { name: 'Αγγλικά', flag: '🇬🇧' }, { name: 'Γαλλικά', flag: '🇫🇷' },
     { name: 'Γερμανικά', flag: '🇩🇪' }, { name: 'Ισπανικά', flag: '🇪🇸' },
@@ -148,23 +182,25 @@ export default function LandingPage() {
     { name: 'Ρωσικά', flag: '🇷🇺' }, { name: 'Αραβικά', flag: '🇸🇦' },
     { name: 'Τουρκικά', flag: '🇹🇷' },
   ];
-  // Εξειδικευμένα last for adults, Μελέτη για παιδιά last for children
   const adultLanguages = [...commonLanguages, { name: 'Εξειδικευμένα Πτυχία για ενήλικες', flag: '🎓' }];
   const childLanguages  = [...commonLanguages, { name: 'Μελέτη για παιδιά', flag: '📖' }];
 
-  // Dynamic language options based on selected audience
   const audienceIsChild = prefilled.audience === 'Παιδί';
   const dynamicLanguageOptions = [
     'Αγγλικά', 'Γαλλικά', 'Γερμανικά', 'Ισπανικά', 'Ιταλικά', 'Κινέζικα', 'Ρωσικά', 'Αραβικά', 'Τουρκικά',
     ...(audienceIsChild ? ['Μελέτη για παιδιά'] : ['Εξειδικευμένα Πτυχία για ενήλικες']),
   ];
 
-  // Build settings with prefilled audience/language pre-selection
+  // Merge DB settings (from Supabase) with defaults — DB takes priority
   const funnelSettings = {
     ...SOEASY_SETTINGS,
+    ...(dbSettings ? {
+      slot_duration_minutes: dbSettings.slot_duration_minutes,
+      buffer_minutes: dbSettings.buffer_minutes,
+      working_hours: dbSettings.working_hours,
+    } : {}),
     custom_fields: SOEASY_SETTINGS.custom_fields.map(f => ({
       ...f,
-      // Dynamically update language options based on audience
       options: f.id === 'language' ? dynamicLanguageOptions : f.options,
       defaultValue: f.id === 'audience' ? prefilled.audience : f.id === 'language' ? prefilled.language : '',
     })),
@@ -204,6 +240,7 @@ export default function LandingPage() {
                 settings={funnelSettings}
                 onPartialCapture={handlePartialCapture}
                 onComplete={handleComplete}
+                onDateSelect={getBookedSlots}
                 onFieldChange={(id, val) => {
                   if (id === 'audience' || id === 'language') {
                     setPrefilled(prev => ({ ...prev, [id]: val }));
@@ -298,6 +335,7 @@ export default function LandingPage() {
             settings={funnelSettings}
             onPartialCapture={handlePartialCapture}
             onComplete={handleComplete}
+            onDateSelect={getBookedSlots}
             onFieldChange={(id, val) => {
               if (id === 'audience' || id === 'language') {
                 setPrefilled(prev => ({ ...prev, [id]: val }));
