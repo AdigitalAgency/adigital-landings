@@ -123,9 +123,11 @@ export default function LandingPage() {
     const slotDuration = dbSettings?.slot_duration_minutes ?? SOEASY_SETTINGS.slot_duration_minutes;
 
     try {
+      const apptId = crypto.randomUUID();
       const { error: apptError } = await supabase
         .from('appointments')
         .insert([{
+          id: apptId,
           tenant_id: TENANT_ID,
           agency_id: AGENCY_ID,
           lead_id: leadId,
@@ -137,10 +139,11 @@ export default function LandingPage() {
       if (apptError) console.error('Appointment insert error:', apptError);
 
       if (leadId) {
-        await supabase.from('leads').update({
-          booking_status: 'booked',
-          appointment_id: appt?.id,
-        }).eq('id', leadId);
+        const { error: rpcError } = await supabase.rpc('confirm_lead_booking', {
+          p_lead_id: leadId,
+          p_appt_id: apptId
+        });
+        if (rpcError) console.error('RPC confirm_lead_booking error:', rpcError);
       }
 
       (window as any).gtag?.('event', 'conversion', { send_to: 'AW-CONVERSION_ID/LABEL' });
