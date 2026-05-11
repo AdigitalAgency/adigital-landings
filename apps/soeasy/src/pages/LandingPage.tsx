@@ -83,17 +83,20 @@ export default function LandingPage() {
   };
 
   // Partial capture: saves lead immediately when user clicks "Next"
-  async function handlePartialCapture(lead: any): Promise<string | null> {
+  async function handlePartialCapture(lead: any) {
     try {
-      const { data, error } = await supabase
+      const leadId = crypto.randomUUID();
+      const { error } = await supabase
         .from('leads')
         .insert([{
-          name: lead.name,
-          phone: lead.phone,
-          status: 'new',
-          booking_status: 'partial',
+          id: leadId,
           tenant_id: TENANT_ID,
           agency_id: AGENCY_ID,
+          name: lead.name,
+          phone: lead.phone,
+          booking_status: 'partial',
+          source: 'Website',
+          probability: 'high',
           custom_data: {
             audience: lead.audience || prefilled.audience,
             language: lead.language || prefilled.language,
@@ -102,11 +105,9 @@ export default function LandingPage() {
             ),
           },
           notes: '',
-        }])
-        .select('id')
-        .single();
+        }]);
       if (error) throw error;
-      return data?.id ?? null;
+      return leadId;
     } catch (err) {
       console.error('Partial capture error:', err);
       return null;
@@ -122,7 +123,7 @@ export default function LandingPage() {
     const slotDuration = dbSettings?.slot_duration_minutes ?? SOEASY_SETTINGS.slot_duration_minutes;
 
     try {
-      const { data: appt, error: apptError } = await supabase
+      const { error: apptError } = await supabase
         .from('appointments')
         .insert([{
           tenant_id: TENANT_ID,
@@ -131,9 +132,7 @@ export default function LandingPage() {
           scheduled_at: scheduledAt.toISOString(),
           duration_minutes: slotDuration,
           status: 'pending',
-        }])
-        .select('id')
-        .single();
+        }]);
 
       if (apptError) console.error('Appointment insert error:', apptError);
 
