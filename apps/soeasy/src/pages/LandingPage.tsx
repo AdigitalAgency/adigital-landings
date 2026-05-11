@@ -82,9 +82,14 @@ export default function LandingPage() {
     formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
-  // Partial capture: saves lead immediately when user clicks "Next"
-  async function handlePartialCapture(lead: any) {
+  // Partial capture: saves lead immediately
+  async function handlePartialCapture(data: any) {
     try {
+      if (!TENANT_ID || !AGENCY_ID) {
+        console.warn("Tenant or Agency ID not provided");
+        return;
+      }
+      
       const leadId = crypto.randomUUID();
       const { error } = await supabase
         .from('leads')
@@ -92,21 +97,31 @@ export default function LandingPage() {
           id: leadId,
           tenant_id: TENANT_ID,
           agency_id: AGENCY_ID,
-          name: lead.name,
-          phone: lead.phone,
+          name: data.name,
+          phone: data.phone,
+          status: 'new', // Αρχικό status: Νέα επαφή
+          source: 'website', // Προέλευση: Website (φόρμα)
           booking_status: 'partial',
-          source: 'Website',
           probability: 'high',
           custom_data: {
-            audience: lead.audience || prefilled.audience,
-            language: lead.language || prefilled.language,
+            audience: data.audience || prefilled.audience,
+            language: data.language || prefilled.language,
             ...Object.fromEntries(
-              Object.entries(lead).filter(([k]) => !['name', 'phone'].includes(k))
+              Object.entries(data).filter(([k]) => !['name', 'phone'].includes(k))
             ),
           },
           notes: '',
         }]);
+
       if (error) throw error;
+      
+      // GTM Event
+      (window as any).dataLayer?.push({
+        event: 'lead_capture_step1',
+        lead_id: leadId,
+        source: 'website'
+      });
+
       return leadId;
     } catch (err) {
       console.error('Partial capture error:', err);
@@ -148,6 +163,13 @@ export default function LandingPage() {
 
       (window as any).gtag?.('event', 'conversion', { send_to: 'AW-CONVERSION_ID/LABEL' });
       (window as any).fbq?.('track', 'Lead');
+      
+      // GTM Event
+      (window as any).dataLayer?.push({
+        event: 'booking_complete',
+        lead_id: leadId,
+        appointment_date: scheduledAt.toISOString()
+      });
 
     } catch (err) {
       console.error('Booking error:', err);
