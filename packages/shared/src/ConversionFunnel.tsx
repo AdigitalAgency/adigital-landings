@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   format, addMonths, subMonths, startOfMonth, endOfMonth,
   startOfWeek, endOfWeek, isSameMonth, isSameDay,
@@ -136,6 +136,57 @@ export const ConversionFunnel: React.FC<ConversionFunnelProps> = ({
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settingsOverride]);
+
+  const lastSentComboRef = useRef<string | null>(null);
+
+  // GTM Tracking for dropdowns
+  useEffect(() => {
+    const audience = (formData as any).audience;
+    const language = (formData as any).language;
+
+    if (!audience || !language) return;
+
+    const normalizeAudience = (val: string) => {
+      const v = val.toLowerCase();
+      if (v.includes('ενήλικ')) return 'adult';
+      if (v.includes('παιδ')) return 'child';
+      return null;
+    };
+
+    const normalizeLanguage = (val: string) => {
+      const v = val.toLowerCase();
+      if (v.includes('αγγλ')) return 'english';
+      if (v.includes('γαλλ')) return 'french';
+      if (v.includes('γερμ')) return 'german';
+      if (v.includes('ισπαν')) return 'spanish';
+      if (v.includes('ιταλ')) return 'italian';
+      if (v.includes('κινεζ')) return 'chinese';
+      return null;
+    };
+
+    const audType = normalizeAudience(audience);
+    const langType = normalizeLanguage(language);
+
+    if (!audType || !langType) return;
+
+    const currentCombo = `${audType}_${langType}`;
+
+    const timer = setTimeout(() => {
+      if (lastSentComboRef.current !== currentCombo) {
+        lastSentComboRef.current = currentCombo;
+        const gtmWindow = window as any;
+        gtmWindow.dataLayer = gtmWindow.dataLayer || [];
+        gtmWindow.dataLayer.push({
+          event: 'course_interest_selected',
+          audience_type: audType,
+          course_language: langType,
+          form_name: 'contact_form'
+        });
+      }
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [(formData as any).audience, (formData as any).language]);
 
   const days = eachDayOfInterval({
     start: startOfWeek(startOfMonth(currentMonth), { weekStartsOn: 1 }),
