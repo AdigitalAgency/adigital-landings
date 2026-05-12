@@ -477,7 +477,7 @@ export const ConversionFunnel: React.FC<ConversionFunnelProps> = ({
 
         <div style={S.footer}>
           <span style={{ display: 'inline-block', width: '7px', height: '7px', borderRadius: '50%', background: '#22c55e' }} />
-          Τα στοιχεία σας είναι ασφαλή
+          ΤΑ ΣΤΟΙΧΕΙΑ ΣΑΣ ΕΙΝΑΙ ΑΣΦΑΛΗ
         </div>
       </div>
     </div>

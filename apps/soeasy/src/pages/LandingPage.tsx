@@ -439,16 +439,84 @@ export default function LandingPage() {
       {/* FINAL CTA */}
       <section className="py-24 relative overflow-hidden" style={{ background: 'linear-gradient(90deg, #feea00 0%, #ff8d01 100%)' }}>
         <div className="max-w-[1200px] mx-auto px-6 text-center">
-          <h2 className="mb-8 text-navy text-4xl md:text-5xl font-bold">Έτοιμος να ξεκινήσεις;</h2>
-          <button onClick={() => scrollToForm()} className="px-10 py-5 bg-[#2B2520] text-white rounded-lg shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105 text-xl font-medium">
-            Κλείσε τώρα το ραντεβού σου
+          <h2 className="mb-8 text-navy text-4xl md:text-5xl font-bold uppercase tracking-tight">ΕΤΟΙΜΟΣ ΝΑ ΞΕΚΙΝΗΣΕΙΣ;</h2>
+          <button onClick={() => scrollToForm()} className="px-10 py-5 bg-[#2B2520] text-white rounded-lg shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105 text-xl font-black uppercase tracking-wider">
+            ΚΛΕΙΣΕ ΤΩΡΑ ΤΟ ΡΑΝΤΕΒΟΥ ΣΟΥ
           </button>
         </div>
       </section>
 
-      <footer className="py-8 bg-foreground text-background text-center">
-        <p className="opacity-70 mb-2">© 2026 SoEasy Περιστερίου - Μαθήματα Ξένων Γλωσσών</p>
-        <p className="text-xs opacity-50">Designed & Developed by <a href="https://adigitalagency.gr" target="_blank" rel="noopener noreferrer" className="hover:text-primary">ADIGITAL Marketing Agency</a></p>
+      {/* MAP & CONTACT */}
+      <section className="py-24 bg-white border-t border-border">
+        <div className="max-w-[1200px] mx-auto px-6">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <h2 className="text-4xl font-black mb-8 text-navy uppercase tracking-tight">ΕΛΑ ΝΑ ΜΑΣ ΔΕΙΣ ΑΠΟ ΚΟΝΤΑ</h2>
+              <div className="space-y-6 text-lg">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                  </div>
+                  <div>
+                    <p className="font-black text-xs text-primary uppercase tracking-widest mb-1">ΔΙΕΥΘΥΝΣΗ</p>
+                    <p className="text-navy font-bold">Δελφών 28, Περιστέρι 121 31</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                  </div>
+                  <div>
+                    <p className="font-black text-xs text-primary uppercase tracking-widest mb-1">ΤΗΛΕΦΩΝΟ</p>
+                    <a href="tel:2104441909" className="text-navy font-bold hover:text-primary transition-colors">21 0444 1909</a>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                  </div>
+                  <div>
+                    <p className="font-black text-xs text-primary uppercase tracking-widest mb-1">EMAIL</p>
+                    <a href="mailto:peristeri@soeasy.gr" className="text-navy font-bold hover:text-primary transition-colors">peristeri@soeasy.gr</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="h-[400px] rounded-3xl overflow-hidden shadow-2xl border border-border">
+              <iframe 
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3144.33177651795!2d23.6766779!3d38.0163914!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x14a1a2b2256c703b%3A0x677b5a88c0379929!2sDelfon%2028%2C%20Peristeri%20121%2031%2C%20Greece!5e0!3m2!1sen!2sgr!4v1683897120000!5m2!1sen!2sgr" 
+                width="100%" 
+                height="100%" 
+                style={{ border: 0 }} 
+                allowFullScreen 
+                loading="lazy" 
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer className="py-12 bg-foreground text-background">
+        <div className="max-w-[1200px] mx-auto px-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="text-center md:text-left">
+              <p className="opacity-70 mb-2 font-bold uppercase tracking-widest text-xs">© 2026 SOEASY ΠΕΡΙΣΤΕΡΙΟΥ - ΜΑΘΗΜΑΤΑ ΞΕΝΩΝ ΓΛΩΣΣΩΝ</p>
+              <p className="text-[10px] opacity-30 uppercase font-black tracking-tighter">Designed & Developed by <a href="https://adigitalagency.gr" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">ADIGITAL Marketing Agency</a></p>
+            </div>
+            <div className="flex items-center gap-6">
+              <a href="https://www.facebook.com/soeasyperisteri/" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary transition-all hover:scale-110">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+              </a>
+              <a href="https://www.instagram.com/soeasy_peristeri/" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary transition-all hover:scale-110">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+              </a>
+              <a href="https://www.tiktok.com/@soeasyperisteriou" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary transition-all hover:scale-110">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"></path></svg>
+              </a>
+            </div>
+          </div>
+        </div>
       </footer>
     </div>
   );
