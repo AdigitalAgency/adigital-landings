@@ -9,8 +9,8 @@ import { notificationService } from '../utils/notificationService';
 import { useNavigate } from 'react-router-dom';
 
 // SoEasy Tenant Config
-const TENANT_ID  = 'bfda7c95-4642-4757-ad8a-4be04937dbb9';
-const AGENCY_ID  = 'cb0a7802-baef-4809-aee5-50c3caafbfbc';
+const TENANT_ID  = '919d700e-436d-4950-84c4-754f9a0c78a0';
+const AGENCY_ID  = '1e37039a-6379-40da-b788-b4b1a6ccf31a';
 
 const SOEASY_SETTINGS = {
   slot_duration_minutes: 60,
