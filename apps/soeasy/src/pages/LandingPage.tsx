@@ -331,7 +331,7 @@ export default function LandingPage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
               { icon: '👥', text: 'Ολιγομελή τμήματα (4–8 άτομα)' },
-              { icon: '⭐', text: 'Έμπειροι καθηγητές' },
+              { icon: '⭐', text: <>Έμπειροι <br/> καθηγητές</> },
               { icon: '🏢', text: 'Σύγχρονες εγκαταστάσεις' },
               { icon: '📈', text: 'Υψηλά ποσοστά επιτυχίας' },
             ].map((item, idx) => (
@@ -384,7 +384,7 @@ export default function LandingPage() {
         <div className="max-w-[1200px] mx-auto px-6 text-center">
           <h2 className="text-4xl font-bold mb-16">Πώς ξεκινάς</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-8">
-            {['Συμπληρώνεις τη φόρμα', 'Σε καλούμε εντός 24 ωρών', 'Κλείνουμε ραντεβού', 'Ξεκινάς μαθήματα', 'Παραλαμβάνεις το Πτυχίο σου'].map((text, idx) => (
+            {['Συμπληρώνεις τη φόρμα', 'Σε καλούμε εντός 24 ωρών', 'Κλείνουμε ραντεβού', 'Ξεκινάς μαθήματα', 'Παραλαμβάνεις το Πτυχίο'].map((text, idx) => (
               <div key={idx}>
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#ff8d01] flex items-center justify-center text-2xl font-bold text-white shadow-lg">{idx + 1}</div>
                 <p className="font-bold text-[#2B2520]">{text}</p>
@@ -497,14 +497,10 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <footer className="py-12 bg-foreground text-background">
+      <footer className="py-12 bg-foreground text-background pb-32 md:pb-12">
         <div className="max-w-[1200px] mx-auto px-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-            <div className="text-center md:text-left">
-              <p className="opacity-70 mb-2 font-bold uppercase tracking-widest text-xs">© 2026 SOEASY ΠΕΡΙΣΤΕΡΙΟΥ - ΜΑΘΗΜΑΤΑ ΞΕΝΩΝ ΓΛΩΣΣΩΝ</p>
-              <p className="text-[10px] opacity-30 uppercase font-black tracking-tighter">Designed & Developed by <a href="https://adigitalagency.gr" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">ADIGITAL Marketing Agency</a></p>
-            </div>
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-6 md:w-1/3 justify-center md:justify-start">
               <a href="https://www.facebook.com/soeasyperisteri/" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary transition-all hover:scale-110">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
               </a>
@@ -515,6 +511,11 @@ export default function LandingPage() {
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"></path></svg>
               </a>
             </div>
+            <div className="text-center md:w-1/3">
+              <p className="opacity-70 mb-2 font-bold uppercase tracking-widest text-xs">© 2026 SOEASY ΠΕΡΙΣΤΕΡΙΟΥ - ΜΑΘΗΜΑΤΑ ΞΕΝΩΝ ΓΛΩΣΣΩΝ</p>
+              <p className="text-[10px] opacity-30 uppercase font-black tracking-tighter">Designed & Developed by <a href="https://adigitalagency.gr" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">ADIGITAL Marketing Agency</a></p>
+            </div>
+            <div className="hidden md:block md:w-1/3"></div>
           </div>
         </div>
       </footer>
