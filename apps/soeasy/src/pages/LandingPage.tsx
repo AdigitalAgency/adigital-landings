@@ -27,244 +27,325 @@ const SOEASY_SETTINGS = {
     sun: { enabled: false, start: '00:00', end: '00:00' },
   },
   custom_fields: [
-    { id: 'audience', label: 'Για ποιον είναι', type: 'select' as const, options: ['Παιδί', 'Ενήλικας'], required: true },
-    { id: 'language', label: 'Γλώσσα ενδιαφέροντος', type: 'select' as const, options: ['Αγγλικά', 'Γαλλικά', 'Γερμανικά', 'Ισπανικά', 'Ιταλικά', 'Κινέζικα'], required: false },
-  ]
+    { id: 'audience', label: 'Για ποιον', type: 'select', options: ['Παιδί', 'Ενήλικας'], required: true },
+    { id: 'language', label: 'Γλώσσα', type: 'select', options: [], required: true },
+  ],
 };
 
 export default function LandingPage() {
   const navigate = useNavigate();
   const formRef = useRef<HTMLDivElement>(null);
-  const [prefilled, setPrefilled] = useState({ language: '', audience: '' });
   const [dbSettings, setDbSettings] = useState<any>(null);
-  const [formData, setFormData] = useState<any>({});
+  const [formData, setFormData] = useState<any>({ name: '', phone: '', audience: '', language: '' });
+  const [prefilled, setPrefilled] = useState({ language: '', audience: '' });
 
   useEffect(() => {
-    async function loadSettings() {
-      const { data } = await supabase
-        .from('booking_settings')
-        .select('*')
-        .eq('tenant_id', TENANT_ID)
-        .maybeSingle();
-      if (data) setDbSettings(data);
-    }
-    loadSettings();
+    fetchDbSettings();
   }, []);
 
+  async function fetchDbSettings() {
+    const { data } = await supabase
+      .from('booking_settings')
+      .select('*')
+      .eq('tenant_id', TENANT_ID)
+      .maybeSingle();
+    if (data) setDbSettings(data);
+  }
+
   const scrollToForm = (language?: string, audience?: string) => {
-    if (language || audience) {
-      setPrefilled({ language: language || '', audience: audience || '' });
+    let mappedAudience = audience;
+    if (audience === 'adult') mappedAudience = 'Ενήλικας';
+    if (audience === 'child') mappedAudience = 'Παιδί';
+
+    if (language || mappedAudience) {
+      setPrefilled({ 
+        language: language || '', 
+        audience: mappedAudience || '' 
+      });
     }
     formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
-  async function getGoogleBusyTimes(date: Date) {
+  // CRM Integration: Saves lead as soon as step 1 is completed
+  async function handlePartialCapture(data: any) {
     try {
-      const timeMin = new Date(date);
-      timeMin.setHours(0, 0, 0, 0);
-      const timeMax = new Date(date);
-      timeMax.setHours(23, 59, 59, 999);
-
-      const { data, error } = await supabase.functions.invoke('sync-google-calendar', {
-        body: {
-          action: 'get_busy',
-          tenant_id: TENANT_ID,
-          time_min: timeMin.toISOString(),
-          time_max: timeMax.toISOString()
-        }
-      });
-      if (error) return [];
-      const calendars = data?.calendars || {};
-      return Object.values(calendars).flatMap((cal: any) => cal.busy || []);
+      console.log('Capturing lead:', data);
+      setFormData(data);
+      const leadId = crypto.randomUUID();
+      const { error } = await supabase.from('leads').insert([{
+        id: leadId,
+        tenant_id: TENANT_ID,
+        agency_id: AGENCY_ID,
+        name: data.name,
+        phone: data.phone,
+        status: 'new',
+        source: 'Landing Page',
+        metadata: { ...data, captured_at: new Date().toISOString() }
+      }]);
+      
+      if (error) throw error;
+      return leadId;
     } catch (err) {
-      return [];
+      console.error('Partial capture failed:', err);
+      return null;
     }
   }
 
+  // CRM Integration: Fetches booked slots for the calendar
+  async function getBookedSlots(date: Date) {
+    const start = new Date(date); start.setHours(0,0,0,0);
+    const end = new Date(date); end.setHours(23,59,59,999);
+
+    const { data } = await supabase
+      .from('appointments')
+      .select('scheduled_at')
+      .eq('tenant_id', TENANT_ID)
+      .gte('scheduled_at', start.toISOString())
+      .lte('scheduled_at', end.toISOString())
+      .neq('status', 'cancelled');
+
+    return (data || []).map(a => format(new Date(a.scheduled_at), 'HH:mm'));
+  }
+
+  // Final Booking: saves appointment and notifies
   async function handleComplete(leadId: string | null, date: Date, time: string) {
     const [hours, minutes] = time.split(':').map(Number);
     const scheduledAt = new Date(date);
     scheduledAt.setHours(hours, minutes, 0, 0);
+
     const slotDuration = dbSettings?.slot_duration_minutes ?? SOEASY_SETTINGS.slot_duration_minutes;
 
     try {
       const apptId = crypto.randomUUID();
       await supabase.from('appointments').insert([{
-        id: apptId, tenant_id: TENANT_ID, agency_id: AGENCY_ID, lead_id: leadId,
-        scheduled_at: scheduledAt.toISOString(), duration_minutes: slotDuration, status: 'pending',
+        id: apptId,
+        tenant_id: TENANT_ID,
+        agency_id: AGENCY_ID,
+        lead_id: leadId,
+        scheduled_at: scheduledAt.toISOString(),
+        duration_minutes: slotDuration,
+        status: 'appointment',
       }]);
 
       if (leadId) {
         await supabase.rpc('confirm_lead_booking', { p_lead_id: leadId, p_appt_id: apptId });
       }
 
-      // Google Sync
-      const endAt = new Date(scheduledAt.getTime() + slotDuration * 60000);
-      await supabase.functions.invoke('sync-google-calendar', {
-        body: {
-          action: 'create_event',
-          tenant_id: TENANT_ID,
-          event_data: {
-            summary: `Ραντεβού: ${formData.name || 'Πελάτης'}`,
-            description: `Γλώσσα: ${formData.language || 'N/A'}\nAudience: ${formData.audience || 'N/A'}\nΤηλ: ${formData.phone || 'N/A'}`,
-            start: scheduledAt.toISOString(), end: endAt.toISOString(), email: formData.email
-          }
-        }
-      });
-
-      // Notifications
+      // Notification Logic
       const dateStr = scheduledAt.toLocaleDateString('el-GR', { day: '2-digit', month: '2-digit', year: 'numeric' });
       const timeStr = scheduledAt.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
-      notificationService.sendEmail(TENANT_ID, 'admin@soeasy.gr', 'Νέο Ραντεβού!', `Έχετε ένα νέο ραντεβού για τις ${dateStr} ${timeStr}.`);
-      if (formData.email) notificationService.sendEmail(TENANT_ID, formData.email, 'Επιβεβαίωση Ραντεβού - SoEasy', `Το ραντεβού σας επιβεβαιώθηκε για τις ${dateStr} ${timeStr}.`);
-      if (formData.phone) notificationService.sendSMS(TENANT_ID, formData.phone, `SoEasy: Το ραντεβού σας επιβεβαιώθηκε για τις ${dateStr} ${timeStr}.`);
 
+      notificationService.sendEmail(TENANT_ID, 'admin@soeasy.gr', 'Νέο Ραντεβού!', `Έχετε ένα νέο ραντεβού για τις ${dateStr} ${timeStr}.`);
+      
+      setTimeout(() => navigate('/thank-you'), 800);
     } catch (err) {
-      console.error('Booking error:', err);
+      console.error('Booking failed:', err);
     }
-    setTimeout(() => navigate('/thank-you'), 800);
   }
 
-  const getAvailableSlots = async (date: Date) => {
-    const dayKey = format(date, 'eee', { locale: enUS }).toLowerCase() as keyof typeof SOEASY_SETTINGS.working_hours;
-    const dayConfig = dbSettings?.working_hours?.[dayKey] || SOEASY_SETTINGS.working_hours[dayKey];
-    if (!dayConfig || !dayConfig.enabled) return [];
-
-    const slots = [];
-    let current = new Date(date);
-    const [startH, startM] = dayConfig.start.split(':').map(Number);
-    const [endH, endM] = dayConfig.end.split(':').map(Number);
-    current.setHours(startH, startM, 0, 0);
-    const end = new Date(date);
-    end.setHours(endH, endM, 0, 0);
-
-    const slotDuration = dbSettings?.slot_duration_minutes ?? SOEASY_SETTINGS.slot_duration_minutes;
-    const buffer = dbSettings?.buffer_minutes ?? SOEASY_SETTINGS.buffer_minutes;
-
-    const [dbBusy, googleBusy] = await Promise.all([
-      supabase.from('appointments').select('scheduled_at').eq('tenant_id', TENANT_ID).gte('scheduled_at', current.toISOString()).lte('scheduled_at', end.toISOString()).neq('status', 'cancelled'),
-      getGoogleBusyTimes(date)
-    ]);
-
-    const takenDbSlots = (dbBusy.data || []).map(a => format(new Date(a.scheduled_at), 'HH:mm'));
-
-    while (current < end) {
-      const timeLabel = format(current, 'HH:mm');
-      const slotEnd = new Date(current.getTime() + slotDuration * 60000);
-      const isGoogleBusy = googleBusy.some((busy: any) => (current < new Date(busy.end) && slotEnd > new Date(busy.start)));
-      if (!takenDbSlots.includes(timeLabel) && !isGoogleBusy) slots.push(timeLabel);
-      current = new Date(current.getTime() + (slotDuration + buffer) * 60000);
-    }
-    return slots;
-  };
-
-  const adultLanguages = [
-    { name: 'Εξειδικευμένα Πτυχία για ενήλικες', flag: '🎓' }, { name: 'Αγγλικά', flag: '🇬🇧' }, { name: 'Γαλλικά', flag: '🇫🇷' }, { name: 'Γερμανικά', flag: '🇩🇪' }, { name: 'Ισπανικά', flag: '🇪🇸' }, { name: 'Ιταλικά', flag: '🇮🇹' }, { name: 'Κινέζικα', flag: '🇨🇳' },
+  const commonLanguages = [
+    { name: 'Αγγλικά', flag: '🇬🇧' }, { name: 'Γαλλικά', flag: '🇫🇷' },
+    { name: 'Γερμανικά', flag: '🇩🇪' }, { name: 'Ισπανικά', flag: '🇪🇸' },
+    { name: 'Ιταλικά', flag: '🇮🇹' }, { name: 'Κινέζικα', flag: '🇨🇳' },
+    { name: 'Ρωσικά', flag: '🇷🇺' }, { name: 'Αραβικά', flag: '🇸🇦' },
+    { name: 'Τουρκικά', flag: '🇹🇷' },
   ];
-  const childLanguages = [
-    { name: 'Αγγλικά', flag: '🇬🇧' }, { name: 'Γαλλικά', flag: '🇫🇷' }, { name: 'Γερμανικά', flag: '🇩🇪' }, { name: 'Ισπανικά', flag: '🇪🇸' }, { name: 'Ιταλικά', flag: '🇮🇹' }, { name: 'Κινέζικα', flag: '🇨🇳' },
+  const adultLanguages = [...commonLanguages, { name: 'Εξειδικευμένα Πτυχία για ενήλικες', flag: '🎓' }];
+  const childLanguages  = [...commonLanguages, { name: 'Μελέτη για παιδιά', flag: '📖' }];
+
+  const dynamicLanguageOptions = [
+    'Αγγλικά', 'Γαλλικά', 'Γερμανικά', 'Ισπανικά', 'Ιταλικά', 'Κινέζικα', 'Ρωσικά', 'Αραβικά', 'Τουρκικά',
+    ...(prefilled.audience === 'Παιδί' ? ['Μελέτη για παιδιά'] : ['Εξειδικευμένα Πτυχία για ενήλικες']),
   ];
 
   const funnelSettings = {
     ...SOEASY_SETTINGS,
-    ...(dbSettings ? { slot_duration_minutes: dbSettings.slot_duration_minutes, buffer_minutes: dbSettings.buffer_minutes, working_hours: dbSettings.working_hours } : {}),
+    ...(dbSettings ? {
+      slot_duration_minutes: dbSettings.slot_duration_minutes,
+      buffer_minutes: dbSettings.buffer_minutes,
+      working_hours: dbSettings.working_hours,
+    } : {}),
     custom_fields: SOEASY_SETTINGS.custom_fields.map(f => ({
       ...f,
+      options: f.id === 'language' ? dynamicLanguageOptions : f.options,
       defaultValue: f.id === 'audience' ? prefilled.audience : f.id === 'language' ? prefilled.language : '',
     })),
   };
 
   return (
-    <div className="min-h-screen" style={{ fontFamily: 'Manrope, sans-serif' }}>
+    <div className=\"min-h-screen bg-white\" style={{ fontFamily: 'Manrope, sans-serif' }}>
       <Header onCTAClick={() => scrollToForm()} />
       <StickyCTA />
 
       {/* SECTION 1 - HERO */}
-      <section className="relative py-20 md:py-32 overflow-hidden bg-gradient-to-br from-[#FAF7F3] to-[#E8E0D5]">
-        <div className="max-w-[1200px] mx-auto px-6 relative z-10">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="animate-in fade-in duration-700">
-              <h1 className="text-4xl md:text-6xl font-bold text-[#2B2520] mb-6 leading-tight">
+      <section className=\"relative py-20 md:py-32 overflow-hidden bg-gradient-to-br from-[#FAF7F3] to-[#E8E0D5]\">
+        <div className=\"max-w-[1200px] mx-auto px-6 relative z-10\">
+          <div className=\"grid lg:grid-cols-2 gap-12 items-center\">
+            <div>
+              <h1 className=\"text-4xl md:text-6xl font-extrabold text-[#2B2520] mb-6 leading-tight\">
                 Μαθήματα Ξένων Γλωσσών στο Περιστέρι για Παιδιά & Ενήλικες
               </h1>
-              <p className="text-lg md:text-xl opacity-80 mb-8">
-                Αγγλικά, Ισπανικά, Γερμανικά, Ιταλικά με έμπειρους καθηγητές και αποδεδειγμένα αποτελέσματα
+              <p className=\"text-xl text-[#2B2520]/70 mb-8\">
+                Αγγλικά, Ισπανικά, Γερμανικά, Ιταλικά με έμπειρους καθηγητές και αποδεδειγμένα αποτελέσματα.
               </p>
-              <button onClick={() => scrollToForm()} className="px-8 py-4 bg-[#ff8d01] text-white rounded-lg shadow-lg hover:scale-105 transition-all font-bold">
+              <button 
+                onClick={() => scrollToForm()}
+                className=\"px-8 py-4 bg-[#ff8d01] text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all\"
+              >
                 Κλείσε Δωρεάν Ραντεβού
               </button>
             </div>
-            <div className="hidden lg:block animate-in zoom-in duration-700">
-              <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=800" alt="Students" className="rounded-3xl shadow-2xl" />
+            <div className=\"relative\">
+              <div className=\"bg-white/40 backdrop-blur-md p-2 rounded-3xl border border-white/20 shadow-2xl\">
+                <ConversionFunnel
+                  tenantId={TENANT_ID}
+                  agencyId={AGENCY_ID}
+                  settings={funnelSettings}
+                  onPartialCapture={handlePartialCapture}
+                  onComplete={handleComplete}
+                  onDateSelect={getBookedSlots}
+                  onFieldChange={(id, val) => {
+                    if (id === 'audience' || id === 'language') {
+                      setPrefilled(prev => ({ ...prev, [id]: val }));
+                    }
+                  }}
+                  accentColor=\"#ff8d01\"
+                />
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* SECTION 2 - SEGMENTATION */}
-      <section className="py-20 bg-white">
-        <div className="max-w-[1200px] mx-auto px-6">
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="p-8 rounded-2xl shadow-lg border bg-gradient-to-br from-white to-[#FAF7F3]">
-              <div className="text-4xl mb-4">📚</div>
-              <h2 className="text-3xl font-bold mb-4">Μαθήματα για Παιδιά</h2>
-              <ul className="space-y-3 mb-6 opacity-80">
-                <li>• Αγγλικά από μικρή ηλικία</li>
-                <li>• Προετοιμασία για πιστοποιήσεις</li>
-                <li>• Διαδραστική εκμάθηση</li>
+      <section className=\"py-24 bg-white\">
+        <div className=\"max-w-[1200px] mx-auto px-6\">
+          <div className=\"grid md:grid-cols-2 gap-8\">
+            <div className=\"p-8 rounded-3xl border bg-gradient-to-br from-white to-[#FAF7F3] shadow-lg\">
+              <div className=\"text-5xl mb-4\">📚</div>
+              <h2 className=\"text-3xl font-bold mb-4\">Μαθήματα για Παιδιά</h2>
+              <ul className=\"space-y-3 mb-8 text-[#2B2520]/70\">
+                <li className=\"flex items-center gap-2\"><span>•</span> Αγγλικά από μικρή ηλικία</li>
+                <li className=\"flex items-center gap-2\"><span>•</span> Προετοιμασία για πιστοποιήσεις</li>
+                <li className=\"flex items-center gap-2\"><span>•</span> Διαδραστική εκμάθηση</li>
               </ul>
-              <button onClick={() => scrollToForm(undefined, 'Παιδί')} className="px-6 py-3 bg-[#feea00] rounded-lg font-bold">Ενδιαφέρομαι για παιδί</button>
+              <button 
+                onClick={() => scrollToForm(undefined, 'child')}
+                className=\"w-full py-4 bg-[#feea00] rounded-xl font-bold hover:shadow-md transition-all\"
+              >
+                Ενδιαφέρομαι για παιδί
+              </button>
             </div>
-            <div className="p-8 rounded-2xl shadow-lg border bg-gradient-to-br from-white to-[#E8E0D5]">
-              <div className="text-4xl mb-4">🎓</div>
-              <h2 className="text-3xl font-bold mb-4">Μαθήματα για Ενήλικες</h2>
-              <ul className="space-y-3 mb-6 opacity-80">
-                <li>• Ισπανικά, Γερμανικά, Ιταλικά</li>
-                <li>• Για επαγγελματικούς λόγους</li>
-                <li>• Ευέλικτα προγράμματα</li>
+            <div className=\"p-8 rounded-3xl border bg-gradient-to-br from-white to-[#E8E0D5] shadow-lg\">
+              <div className=\"text-5xl mb-4\">🎓</div>
+              <h2 className=\"text-3xl font-bold mb-4\">Μαθήματα για Ενήλικες</h2>
+              <ul className=\"space-y-3 mb-8 text-[#2B2520]/70\">
+                <li className=\"flex items-center gap-2\"><span>•</span> Ισπανικά, Γερμανικά, Ιταλικά</li>
+                <li className=\"flex items-center gap-2\"><span>•</span> Για επαγγελματικούς λόγους</li>
+                <li className=\"flex items-center gap-2\"><span>•</span> Ευέλικτα προγράμματα</li>
               </ul>
-              <button onClick={() => scrollToForm(undefined, 'Ενήλικας')} className="px-6 py-3 bg-[#ff8d01] text-white rounded-lg font-bold">Ενδιαφέρομαι ως ενήλικας</button>
+              <button 
+                onClick={() => scrollToForm(undefined, 'adult')}
+                className=\"w-full py-4 bg-[#ff8d01] text-white rounded-xl font-bold hover:shadow-md transition-all\"
+              >
+                Ενδιαφέρομαι ως ενήλικας
+              </button>
             </div>
           </div>
         </div>
       </section>
 
       {/* SECTION 3 - WHY US */}
-      <section className="py-20 bg-[#feea00]">
-        <div className="max-w-[1200px] mx-auto px-6 text-center">
-          <h2 className="text-4xl font-bold mb-12">Γιατί να επιλέξετε SoEasy Περιστερίου</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[{ icon: '👥', text: 'Ολιγομελή τμήματα' }, { icon: '⭐', text: 'Έμπειροι καθηγητές' }, { icon: '🏢', text: 'Σύγχρονες εγκαταστάσεις' }, { icon: '📈', text: 'Υψηλά ποσοστά επιτυχίας' }].map((item, idx) => (
-              <div key={idx} className="bg-white/20 backdrop-blur-sm p-6 rounded-xl border border-white/30">
+      <section id=\"why-us\" className=\"py-24 bg-[#feea00]\">
+        <div className=\"max-w-[1200px] mx-auto px-6\">
+          <h2 className=\"text-4xl md:text-5xl font-bold text-center mb-16 text-[#2B2520]\">
+            Γιατί να επιλέξετε SoEasy Περιστερίου
+          </h2>
+          <div className=\"grid sm:grid-cols-2 lg:grid-cols-4 gap-8\">
+            {[
+              { icon: '👥', text: 'Ολιγομελή τμήματα (4–8 άτομα)' },
+              { icon: '⭐', text: 'Έμπειροι καθηγητές' },
+              { icon: '🏢', text: 'Σύγχρονες εγκαταστάσεις' },
+              { icon: '📈', text: 'Υψηλά ποσοστά επιτυχίας' },
+            ].map((item, idx) => (
+              <div key={idx} className="bg-white/20 backdrop-blur-md p-8 rounded-2xl border border-white/30 text-center">
                 <div className="text-5xl mb-4">{item.icon}</div>
-                <p className="font-bold">{item.text}</p>
+                <p className="font-bold text-lg">{item.text}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* SECTION 4 - EXPERIENCE GALLERY */}
-      <section className="py-20 bg-white">
+      {/* SECTION 4 - TESTIMONIALS */}
+      <section id="testimonials" className="py-24 bg-white">
         <div className="max-w-[1200px] mx-auto px-6">
-          <h2 className="text-4xl font-bold text-center mb-12">Η εμπειρία στο SoEasy</h2>
-          <div className="grid md:grid-cols-3 gap-6">
-            <ImageWithFallback src="https://images.unsplash.com/photo-1758270704524-596810e891b5" alt="Class" className="rounded-xl shadow-lg aspect-video object-cover" />
-            <ImageWithFallback src="https://images.unsplash.com/photo-1746862932830-f9f695774594" alt="Rooms" className="rounded-xl shadow-lg aspect-video object-cover" />
-            <ImageWithFallback src="https://images.unsplash.com/photo-1758270704021-361c165d68fd" alt="Learning" className="rounded-xl shadow-lg aspect-video object-cover" />
+          <h2 className="text-4xl md:text-5xl font-bold text-center mb-16 text-[#2B2520]">
+            Τι λένε οι μαθητές και οι γονείς
+          </h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                name: 'Μαρία Π.',
+                text: 'Η κόρη μου πήρε το Lower με άριστα! Οι καθηγητές είναι εξαιρετικοί και το περιβάλλον πολύ φιλικό.',
+                achievement: 'Lower - Άριστα',
+              },
+              {
+                name: 'Γιώργος Κ.',
+                text: 'Τέλεια προετοιμασία για τα γερμανικά! Εξαιρετικό επίπεδο διδασκαλίας και πολύ καλή οργάνωση.',
+                achievement: 'Goethe B2',
+              },
+              {
+                name: 'Ελένη Δ.',
+                text: 'Ευέλικτα προγράμματα που ταιριάζουν στο πρόγραμμά μου. Έμαθα ισπανικά σε χρόνο ρεκόρ!',
+                achievement: 'DELE B1',
+              },
+            ].map((testimonial, idx) => (
+              <div key={idx} className="bg-[#FAF7F3] p-8 rounded-2xl shadow-sm border border-[#E8E0D5]">
+                <div className="mb-4 text-[#ff8d01] text-4xl">"</div>
+                <p className="mb-6 text-[#2B2520]/80 italic leading-relaxed">{testimonial.text}</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-bold text-[#2B2520]">{testimonial.name}</p>
+                    <p className="text-sm text-[#ff8d01] font-medium">{testimonial.achievement}</p>
+                  </div>
+                  <div className="text-xl">⭐⭐⭐⭐⭐</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 5 - EXPERIENCE GALLERY */}
+      <section className="py-24 bg-white">
+        <div className="max-w-[1200px] mx-auto px-6">
+          <h2 className="text-4xl font-bold text-center mb-16">Η εμπειρία στο SoEasy</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <ImageWithFallback src="https://images.unsplash.com/photo-1758270704524-596810e891b5" alt="Class" className="rounded-2xl shadow-xl aspect-square object-cover" />
+            <ImageWithFallback src="https://images.unsplash.com/photo-1746862932830-f9f695774594" alt="Rooms" className="rounded-2xl shadow-xl aspect-square object-cover" />
+            <ImageWithFallback src="https://images.unsplash.com/photo-1758270704021-361c165d68fd" alt="Learning" className="rounded-2xl shadow-xl aspect-square object-cover" />
           </div>
         </div>
       </section>
 
       {/* SECTION 5 - PROCESS */}
-      <section className="py-20 bg-gradient-to-br from-[#FAF7F3] to-[#D4A574]">
-        <div className="max-w-[1200px] mx-auto px-6 text-center">
-          <h2 className="text-4xl font-bold mb-16">Πώς ξεκινάς</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-8">
-            {['Συμπληρώνεις τη φόρμα', 'Σε καλούμε εντός 24 ωρών', 'Κλείνουμε ραντεβού', 'Ξεκινάς μαθήματα', 'Παραλαμβάνεις το Πτυχίο σου'].map((text, idx) => (
-              <div key={idx}>
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#ff8d01] flex items-center justify-center text-2xl font-bold text-white shadow-lg">{idx + 1}</div>
-                <p className="font-medium">{text}</p>
+      <section id=\"process\" className=\"py-24 bg-gradient-to-br from-[#FAF7F3] to-[#D4A574]\">
+        <div className=\"max-w-[1200px] mx-auto px-6\">
+          <h2 className=\"text-4xl font-bold text-center mb-20 text-[#2B2520]\">Πώς ξεκινάς</h2>
+          <div className=\"grid sm:grid-cols-2 lg:grid-cols-5 gap-8\">
+            {[
+              { step: '1', text: 'Συμπληρώνεις τη φόρμα' },
+              { step: '2', text: 'Σε καλούμε εντός 24 ωρών' },
+              { step: '3', text: 'Κλείνουμε ραντεβού' },
+              { step: '4', text: 'Ξεκινάς μαθήματα' },
+              { step: '5', text: 'Παραλαμβάνεις το Πτυχίο σου' },
+            ].map((item, idx) => (
+              <div key={idx} className=\"text-center\">
+                <div className=\"w-16 h-16 mx-auto mb-6 rounded-full bg-[#ff8d01] flex items-center justify-center text-2xl font-bold text-white shadow-xl\">
+                  {item.step}
+                </div>
+                <p className=\"font-bold text-[#2B2520]\">{item.text}</p>
               </div>
             ))}
           </div>
@@ -272,32 +353,49 @@ export default function LandingPage() {
       </section>
 
       {/* SECTION 6 - LANGUAGES */}
-      <section className="py-20 bg-muted/30">
-        <div className="max-w-[1200px] mx-auto px-6">
-          <h2 className="text-4xl font-bold text-center mb-12">Οι Γλώσσες που Προσφέρουμε</h2>
-          <div className="grid lg:grid-cols-2 gap-8">
-            <LanguageAccordion audience="adult" languages={adultLanguages} onCTAClick={scrollToForm} />
-            <LanguageAccordion audience="child" languages={childLanguages} onCTAClick={scrollToForm} />
+      <section id=\"languages\" className=\"py-24 bg-[#F8F9FA]\">
+        <div className=\"max-w-[1200px] mx-auto px-6\">
+          <h2 className=\"text-4xl font-bold text-center mb-16\">Οι Γλώσσες που Προσφέρουμε</h2>
+          <div className=\"grid lg:grid-cols-2 gap-12\">
+            <div>
+              <h3 className=\"text-2xl font-bold mb-6 text-[#2B2520]\">Γλώσσες για Ενήλικες</h3>
+              <LanguageAccordion audience=\"adult\" languages={adultLanguages} onCTAClick={scrollToForm} />
+            </div>
+            <div>
+              <h3 className=\"text-2xl font-bold mb-6 text-[#2B2520]\">Γλώσσες για Παιδιά</h3>
+              <LanguageAccordion audience=\"child\" languages={childLanguages} onCTAClick={scrollToForm} />
+            </div>
           </div>
         </div>
       </section>
 
-      {/* SECTION 7 - FUNNEL */}
-      <section className="py-20 bg-white" ref={formRef}>
+      {/* SECTION 7 - FINAL FORM */}
+      <section className="py-24 bg-white" ref={formRef} id="lead-form">
         <div className="max-w-4xl mx-auto px-6">
-          <h2 className="text-4xl font-bold text-center mb-4">Κλείστε Δωρεάν Ραντεβού</h2>
-          <p className="text-center opacity-60 mb-12">Συμπληρώστε τη φόρμα και επιλέξτε την ώρα που σας εξυπηρετεί</p>
-          <ConversionFunnel
-            tenantId={TENANT_ID} agencyId={AGENCY_ID} settings={funnelSettings}
-            onStepChange={(step, data) => data && setFormData((p: any) => ({ ...p, ...data }))}
-            getAvailableSlots={getAvailableSlots} onComplete={handleComplete}
-          />
+          <h2 className="text-4xl font-bold text-center mb-4">Κλείσε Δωρεάν Ραντεβού Αξιολόγησης</h2>
+          <p className="text-center text-[#2B2520]/60 mb-16">Θα επικοινωνήσουμε μαζί σας για να σχεδιάσουμε τη δική σας εκπαιδευτική πορεία.</p>
+          <div className="max-w-xl mx-auto">
+            <ConversionFunnel
+              tenantId={TENANT_ID}
+              agencyId={AGENCY_ID}
+              settings={funnelSettings}
+              onPartialCapture={handlePartialCapture}
+              onComplete={handleComplete}
+              onDateSelect={getBookedSlots}
+              onFieldChange={(id, val) => {
+                if (id === 'audience' || id === 'language') {
+                  setPrefilled(prev => ({ ...prev, [id]: val }));
+                }
+              }}
+              accentColor=\"#ff8d01\"
+            />
+          </div>
         </div>
       </section>
 
-      <footer className="py-12 bg-[#1A1814] text-white/40 text-center text-sm border-t border-white/5">
+      <footer className=\"py-12 bg-[#1A1814] text-white/40 text-center text-sm border-t border-white/5\">
         <p>© 2026 SoEasy Περιστερίου - Μαθήματα Ξένων Γλωσσών</p>
-        <p className="mt-2 text-xs">Designed & Developed by ADIGITAL Marketing Agency</p>
+        <p className=\"mt-2 text-xs text-white/20 font-light\">Designed & Developed by ADIGITAL Marketing Agency</p>
       </footer>
     </div>
   );
