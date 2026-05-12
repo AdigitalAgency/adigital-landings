@@ -369,12 +369,12 @@ export default function LandingPage() {
 
       {/* SECTION 5 - EXPERIENCE GALLERY */}
       <section className="py-20 bg-white">
-        <div className="max-w-[1200px] mx-auto px-6">
-          <h2 className="text-center mb-12 text-4xl md:text-5xl font-bold">Η εμπειρία στο SoEasy</h2>
+        <div className="max-w-[1200px] mx-auto px-6 text-center">
+          <h2 className="mb-12 text-4xl md:text-5xl font-bold">Η εμπειρία στο SoEasy</h2>
           <div className="grid md:grid-cols-3 gap-6">
-            <ImageWithFallback src="https://images.unsplash.com/photo-1758270704524-596810e891b5" alt="Class" className="rounded-2xl shadow-xl aspect-square object-cover" />
-            <ImageWithFallback src="https://images.unsplash.com/photo-1746862932830-f9f695774594" alt="Rooms" className="rounded-2xl shadow-xl aspect-square object-cover" />
-            <ImageWithFallback src="https://images.unsplash.com/photo-1758270704021-361c165d68fd" alt="Learning" className="rounded-2xl shadow-xl aspect-square object-cover" />
+            <ImageWithFallback src="/gallery-1.png" alt="Class Kids" className="rounded-2xl shadow-xl aspect-square object-cover" />
+            <ImageWithFallback src="/gallery-2.png" alt="Classroom" className="rounded-2xl shadow-xl aspect-square object-cover" />
+            <ImageWithFallback src="/gallery-3.png" alt="Lab" className="rounded-2xl shadow-xl aspect-square object-cover" />
           </div>
         </div>
       </section>

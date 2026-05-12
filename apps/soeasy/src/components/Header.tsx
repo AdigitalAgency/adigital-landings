@@ -53,7 +53,7 @@ export function Header({ onCTAClick }: HeaderProps) {
             setIsMenuOpen(false);
           }}
         >
-          <img src="/logo.png" alt="SoEasy Logo" className="h-10 md:h-14 object-contain" />
+          <img src="/logo-soeasy.png" alt="SoEasy Logo" className="h-10 md:h-14 object-contain" />
         </div>
 
         {/* Desktop Menu */}
