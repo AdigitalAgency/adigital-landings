@@ -291,7 +291,7 @@ export default function LandingPage() {
             {/* Hero Image */}
             <div className="bg-white p-4 rounded-3xl shadow-2xl overflow-hidden transform hover:scale-[1.02] transition-all duration-500" style={{ animation: 'fadeIn 0.8s ease-out 0.3s backwards' }}>
               <ImageWithFallback 
-                src="/hero-reception.jpg" 
+                src="/hero-reception.png" 
                 alt="SoEasy Peristeri Reception" 
                 className="w-full h-[400px] object-cover rounded-2xl"
               />
