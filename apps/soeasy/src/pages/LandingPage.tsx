@@ -336,33 +336,42 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* WHY US */}
-      <section className="py-20 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #feea00 0%, #fef34d 100%)' }}>
-        <div className="max-w-[1200px] mx-auto px-6 relative z-10">
-          <h2 className="text-center mb-12 text-4xl md:text-5xl">Γιατί να επιλέξετε SoEasy Περιστερίου</h2>
+      {/* SECTION 3 - WHY US */}
+      <section id="why-us" className="py-20 bg-[#feea00]">
+        <div className="max-w-[1200px] mx-auto px-6 text-center">
+          <h2 className="text-4xl md:text-5xl font-bold mb-12">Γιατί να επιλέξετε SoEasy Περιστερίου</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[{ icon: '👥', text: 'Ολιγομελή τμήματα (4–8 άτομα)' }, { icon: '⭐', text: 'Έμπειροι καθηγητές' }, { icon: '🏢', text: 'Σύγχρονες εγκαταστάσεις' }, { icon: '📈', text: 'Υψηλά ποσοστά επιτυχίας' }].map((item, idx) => (
-              <div key={idx} className="bg-white/10 backdrop-blur-sm p-6 rounded-xl border border-white/20 text-center hover:bg-white/20 transition-all duration-300">
+            {[
+              { icon: '👥', text: 'Ολιγομελή τμήματα (4–8 άτομα)' },
+              { icon: '⭐', text: 'Έμπειροι καθηγητές' },
+              { icon: '🏢', text: 'Σύγχρονες εγκαταστάσεις' },
+              { icon: '📈', text: 'Υψηλά ποσοστά επιτυχίας' },
+            ].map((item, idx) => (
+              <div key={idx} className="bg-white/20 backdrop-blur-md p-8 rounded-2xl border border-white/30 text-center hover:bg-white/30 transition-all duration-300">
                 <div className="text-5xl mb-4">{item.icon}</div>
-                <p className="text-lg">{item.text}</p>
+                <p className="font-bold text-lg">{item.text}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* TESTIMONIALS */}
-      <section className="py-20 bg-background">
+      {/* SECTION 4 - TESTIMONIALS */}
+      <section id="testimonials" className="py-20 bg-white">
         <div className="max-w-[1200px] mx-auto px-6">
-          <h2 className="text-center mb-12 text-4xl md:text-5xl" style={{ color: 'var(--navy)' }}>Τι λένε οι μαθητές</h2>
+          <h2 className="text-center mb-12 text-4xl md:text-5xl text-[#2B2520]">Τι λένε οι μαθητές και οι γονείς</h2>
           <div className="grid md:grid-cols-3 gap-8">
-            {[{ name: 'Μαρία Π.', text: 'Η κόρη μου πήρε το Lower με άριστα!', achievement: 'Lower - Άριστα' }, { name: 'Γιώργος Κ.', text: 'Εξαιρετικό επίπεδο διδασκαλίας!', achievement: 'Goethe B2' }, { name: 'Ελένη Δ.', text: 'Έμαθα ισπανικά σε χρόνο ρεκόρ!', achievement: 'DELE B1' }].map((t, idx) => (
-              <div key={idx} className="bg-white p-6 rounded-xl shadow-lg border border-border">
-                <div className="mb-4 text-accent text-3xl">"</div>
-                <p className="mb-4 opacity-80 italic">{t.text}</p>
+            {[
+              { name: 'Μαρία Π.', text: 'Η κόρη μου πήρε το Lower με άριστα! Οι καθηγητές είναι εξαιρετικοί και το περιβάλλον πολύ φιλικό.', achievement: 'Lower - Άριστα' },
+              { name: 'Γιώργος Κ.', text: 'Τέλεια προετοιμασία για τα γερμανικά! Εξαιρετικό επίπεδο διδασκαλίας και πολύ καλή οργάνωση.', achievement: 'Goethe B2' },
+              { name: 'Ελένη Δ.', text: 'Ευέλικτα προγράμματα που ταιριάζουν στο πρόγραμμά μου. Έμαθα ισπανικά σε χρόνο ρεκόρ!', achievement: 'DELE B1' },
+            ].map((t, idx) => (
+              <div key={idx} className="bg-[#FAF7F3] p-8 rounded-2xl shadow-lg border border-[#E8E0D5]">
+                <div className="mb-4 text-[#ff8d01] text-4xl">"</div>
+                <p className="mb-6 text-[#2B2520]/80 italic leading-relaxed">{t.text}</p>
                 <div className="flex items-center justify-between">
-                  <div><p className="font-medium">{t.name}</p><p className="text-sm text-primary">{t.achievement}</p></div>
-                  <div className="text-2xl">⭐⭐⭐⭐⭐</div>
+                  <div><p className="font-bold text-[#2B2520]">{t.name}</p><p className="text-sm text-[#ff8d01] font-medium">{t.achievement}</p></div>
+                  <div className="text-xl">⭐⭐⭐⭐⭐</div>
                 </div>
               </div>
             ))}
@@ -370,24 +379,55 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* LANGUAGES */}
-      <section className="py-20 bg-muted/30">
+      {/* SECTION 5 - EXPERIENCE GALLERY */}
+      <section className="py-20 bg-white">
         <div className="max-w-[1200px] mx-auto px-6">
-          <h2 className="text-center mb-12 text-4xl md:text-5xl" style={{ color: 'var(--navy)' }}>Οι Γλώσσες που Προσφέρουμε</h2>
+          <h2 className="text-center mb-12 text-4xl md:text-5xl font-bold">Η εμπειρία στο SoEasy</h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            <ImageWithFallback src="https://images.unsplash.com/photo-1758270704524-596810e891b5" alt="Class" className="rounded-2xl shadow-xl aspect-square object-cover" />
+            <ImageWithFallback src="https://images.unsplash.com/photo-1746862932830-f9f695774594" alt="Rooms" className="rounded-2xl shadow-xl aspect-square object-cover" />
+            <ImageWithFallback src="https://images.unsplash.com/photo-1758270704021-361c165d68fd" alt="Learning" className="rounded-2xl shadow-xl aspect-square object-cover" />
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 6 - PROCESS */}
+      <section id="process" className="py-24 bg-gradient-to-br from-[#FAF7F3] to-[#D4A574]">
+        <div className="max-w-[1200px] mx-auto px-6 text-center">
+          <h2 className="text-4xl font-bold mb-16">Πώς ξεκινάς</h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-8">
+            {['Συμπληρώνεις τη φόρμα', 'Σε καλούμε εντός 24 ωρών', 'Κλείνουμε ραντεβού', 'Ξεκινάς μαθήματα', 'Παραλαμβάνεις το Πτυχίο σου'].map((text, idx) => (
+              <div key={idx}>
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#ff8d01] flex items-center justify-center text-2xl font-bold text-white shadow-lg">{idx + 1}</div>
+                <p className="font-bold text-[#2B2520]">{text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 7 - LANGUAGES */}
+      <section id="languages" className="py-20 bg-muted/30">
+        <div className="max-w-[1200px] mx-auto px-6">
+          <h2 className="text-center mb-12 text-4xl md:text-5xl">Οι Γλώσσες που Προσφέρουμε</h2>
           <div className="grid lg:grid-cols-2 gap-8">
-            <div><h3 className="mb-4 text-2xl" style={{ color: 'var(--navy)' }}>Γλώσσες για Ενήλικες</h3>
-              <LanguageAccordion audience="adult" languages={adultLanguages} onCTAClick={(l, a) => scrollToForm(l, a)} /></div>
-            <div><h3 className="mb-4 text-2xl" style={{ color: 'var(--navy)' }}>Γλώσσες για Παιδιά</h3>
-              <LanguageAccordion audience="child" languages={childLanguages} onCTAClick={(l, a) => scrollToForm(l, a)} /></div>
+            <div>
+              <h3 className="mb-4 text-2xl font-bold">Γλώσσες για Ενήλικες</h3>
+              <LanguageAccordion audience="adult" languages={adultLanguages} onCTAClick={scrollToForm} />
+            </div>
+            <div>
+              <h3 className="mb-4 text-2xl font-bold">Γλώσσες για Παιδιά</h3>
+              <LanguageAccordion audience="child" languages={childLanguages} onCTAClick={scrollToForm} />
+            </div>
           </div>
         </div>
       </section>
 
       {/* BOTTOM FUNNEL */}
-      <section className="py-20 bg-background" ref={formRef}>
-        <div className="max-w-[600px] mx-auto px-6">
-          <h2 className="text-center mb-4 text-4xl md:text-5xl" style={{ color: 'var(--navy)' }}>Κλείστε Δωρεάν Ραντεβού</h2>
-          <p className="text-center mb-8 opacity-70">Συμπληρώστε τη φόρμα και επιλέξτε ημέρα και ώρα που σας εξυπηρετεί</p>
+      <section className="py-20 bg-background" ref={formRef} id="lead-form">
+        <div className="max-w-[600px] mx-auto px-6 text-center">
+          <h2 className="text-4xl md:text-5xl font-bold mb-4">Κλείστε Δωρεάν Ραντεβού</h2>
+          <p className="opacity-70 mb-8">Συμπληρώστε τη φόρμα και επιλέξτε ημέρα και ώρα που σας εξυπηρετεί</p>
           <ConversionFunnel
             tenantId={TENANT_ID}
             agencyId={AGENCY_ID}
